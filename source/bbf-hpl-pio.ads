@@ -54,6 +54,8 @@ package BBF.HPL.PIO is
    type PIO_Pin_Array is array (0 .. 31) of Boolean
      with Component_Size => 1, Size => 32;
 
+   type Peripheral_Function is (A, B);
+
    function PIOA return PIO;
    function PIOB return PIO;
    function PIOC return PIO;
@@ -69,6 +71,12 @@ package BBF.HPL.PIO is
    --  given default value. Optionally, the multi-drive feature can be enabled
    --  on the pin(s).
 
+   procedure Set_Peripheral
+     (Base : PIO;
+      Mask : PIO_Pin_Array;
+      To   : Peripheral_Function);
+   --  Configure IO of a PIO controller as being controlled by a specific
+   --  peripheral.
 
    procedure Set (Base : PIO; Mask : PIO_Pin_Array);
    --  Set a high output level on all the PIOs defined in Mask. This has no

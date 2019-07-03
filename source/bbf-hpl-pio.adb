@@ -132,11 +132,43 @@ package body BBF.HPL.PIO is
          Clear (Base, Mask);
       end if;
 
-      --  Configure as output
+      --  Configure as output and enable control of PIO
 
-      Base.OER :=
-        (As_Array => True,
-         Arr      => BBF.HRI.PIO.PIOA_OER_P_Field_Array (Mask));
+      Base.OER.Arr := BBF.HRI.PIO.PIOA_OER_P_Field_Array (Mask);
+      Base.PER.Arr := BBF.HRI.PIO.PIOA_PER_P_Field_Array (Mask);
    end Set_Output;
+
+   --------------------
+   -- Set_Peripheral --
+   --------------------
+
+   procedure Set_Peripheral
+     (Base : PIO;
+      Mask : PIO_Pin_Array;
+      To   : Peripheral_Function)
+   is
+      use type BBF.HRI.PIO.PIOA_ABSR_P_Field_Array;
+
+   begin
+      --  Disable interrupts on the pin(s)
+
+      Base.IDR.Arr := BBF.HRI.PIO.PIOA_IDR_P_Field_Array (Mask);
+
+      --  Set peripheral function
+
+      case To is
+         when A =>
+            Base.ABSR.Arr :=
+              Base.ABSR.Arr and not BBF.HRI.PIO.PIOA_ABSR_P_Field_Array (Mask);
+
+         when B =>
+            Base.ABSR.Arr :=
+              Base.ABSR.Arr or BBF.HRI.PIO.PIOA_ABSR_P_Field_Array (Mask);
+      end case;
+
+      --  Remove the pins from under the control of PIO
+
+      Base.PDR.Arr := BBF.HRI.PIO.PIOA_PDR_P_Field_Array (Mask);
+   end Set_Peripheral;
 
 end BBF.HPL.PIO;
