@@ -46,7 +46,7 @@ project BBF is
    for Source_Dirs use ("../source", "../source/svd");
 
    package Compiler is
-      for Switches ("Ada") use ("-O2"); -- , "-flto");
+      for Switches ("Ada") use ("-O2", "-flto");
    end Compiler;
 
 end BBF;
