@@ -1,4 +1,4 @@
---  This spec has been automatically generated from SAM3X8E.svd
+--  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
 pragma Ada_2012;
@@ -7,7 +7,7 @@ pragma Style_Checks (Off);
 with Interfaces;  use Interfaces;
 with System;
 
---  Atmel SAM3X8E Microcontroller
+--  Atmel ATSAM3X8E Microcontroller
 package BBF.HRI is
    pragma Preelaborate;
 
@@ -119,5 +119,6 @@ package BBF.HRI is
    WDT_Base : constant System.Address := System'To_Address (16#400E1A50#);
    RTC_Base : constant System.Address := System'To_Address (16#400E1A60#);
    GPBR_Base : constant System.Address := System'To_Address (16#400E1A90#);
+   SYST_Base : constant System.Address := System'To_Address (16#E000E010#);
 
 end BBF.HRI;

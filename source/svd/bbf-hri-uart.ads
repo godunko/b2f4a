@@ -1,4 +1,4 @@
---  This spec has been automatically generated from SAM3X8E.svd
+--  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
 pragma Ada_2012;
@@ -52,15 +52,15 @@ package BBF.HRI.UART is
 
    --  Parity Type
    type MR_PAR_Field is
-     (--  Even parity
+     (--  Even Parity
       Even,
-      --  Odd parity
+      --  Odd Parity
       Odd,
       --  Space: parity forced to 0
       Space,
       --  Mark: parity forced to 1
       Mark,
-      --  No parity
+      --  No Parity
       No)
      with Size => 3;
    for MR_PAR_Field use

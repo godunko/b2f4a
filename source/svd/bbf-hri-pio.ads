@@ -1,4 +1,4 @@
---  This spec has been automatically generated from SAM3X8E.svd
+--  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
 pragma Ada_2012;

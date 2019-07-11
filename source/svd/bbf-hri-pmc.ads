@@ -1,4 +1,4 @@
---  This spec has been automatically generated from SAM3X8E.svd
+--  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
 pragma Ada_2012;
@@ -161,8 +161,8 @@ package BBF.HRI.PMC is
    end record;
 
    --  PMC_PCER0_PID array
-   type PMC_PCER0_PID_Field_Array is array (2 .. 31) of Boolean
-     with Component_Size => 1, Size => 30;
+   type PMC_PCER0_PID_Field_Array is array (8 .. 31) of Boolean
+     with Component_Size => 1, Size => 24;
 
    --  Type definition for PMC_PCER0_PID
    type PMC_PCER0_PID_Field
@@ -171,37 +171,37 @@ package BBF.HRI.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : BBF.HRI.UInt30;
+            Val : BBF.HRI.UInt24;
          when True =>
             --  PID as an array
             Arr : PMC_PCER0_PID_Field_Array;
       end case;
    end record
-     with Unchecked_Union, Size => 30;
+     with Unchecked_Union, Size => 24;
 
    for PMC_PCER0_PID_Field use record
-      Val at 0 range 0 .. 29;
-      Arr at 0 range 0 .. 29;
+      Val at 0 range 0 .. 23;
+      Arr at 0 range 0 .. 23;
    end record;
 
    --  Peripheral Clock Enable Register 0
    type PMC_PCER0_Register is record
       --  unspecified
-      Reserved_0_1 : BBF.HRI.UInt2 := 16#0#;
-      --  Write-only. Peripheral Clock 2 Enable
+      Reserved_0_7 : BBF.HRI.Byte := 16#0#;
+      --  Write-only. Peripheral Clock 8 Enable
       PID          : PMC_PCER0_PID_Field := (As_Array => False, Val => 16#0#);
    end record
      with Volatile_Full_Access, Object_Size => 32,
           Bit_Order => System.Low_Order_First;
 
    for PMC_PCER0_Register use record
-      Reserved_0_1 at 0 range 0 .. 1;
-      PID          at 0 range 2 .. 31;
+      Reserved_0_7 at 0 range 0 .. 7;
+      PID          at 0 range 8 .. 31;
    end record;
 
    --  PMC_PCDR0_PID array
-   type PMC_PCDR0_PID_Field_Array is array (2 .. 31) of Boolean
-     with Component_Size => 1, Size => 30;
+   type PMC_PCDR0_PID_Field_Array is array (8 .. 31) of Boolean
+     with Component_Size => 1, Size => 24;
 
    --  Type definition for PMC_PCDR0_PID
    type PMC_PCDR0_PID_Field
@@ -210,37 +210,37 @@ package BBF.HRI.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : BBF.HRI.UInt30;
+            Val : BBF.HRI.UInt24;
          when True =>
             --  PID as an array
             Arr : PMC_PCDR0_PID_Field_Array;
       end case;
    end record
-     with Unchecked_Union, Size => 30;
+     with Unchecked_Union, Size => 24;
 
    for PMC_PCDR0_PID_Field use record
-      Val at 0 range 0 .. 29;
-      Arr at 0 range 0 .. 29;
+      Val at 0 range 0 .. 23;
+      Arr at 0 range 0 .. 23;
    end record;
 
    --  Peripheral Clock Disable Register 0
    type PMC_PCDR0_Register is record
       --  unspecified
-      Reserved_0_1 : BBF.HRI.UInt2 := 16#0#;
-      --  Write-only. Peripheral Clock 2 Disable
+      Reserved_0_7 : BBF.HRI.Byte := 16#0#;
+      --  Write-only. Peripheral Clock 8 Disable
       PID          : PMC_PCDR0_PID_Field := (As_Array => False, Val => 16#0#);
    end record
      with Volatile_Full_Access, Object_Size => 32,
           Bit_Order => System.Low_Order_First;
 
    for PMC_PCDR0_Register use record
-      Reserved_0_1 at 0 range 0 .. 1;
-      PID          at 0 range 2 .. 31;
+      Reserved_0_7 at 0 range 0 .. 7;
+      PID          at 0 range 8 .. 31;
    end record;
 
    --  PMC_PCSR0_PID array
-   type PMC_PCSR0_PID_Field_Array is array (2 .. 31) of Boolean
-     with Component_Size => 1, Size => 30;
+   type PMC_PCSR0_PID_Field_Array is array (8 .. 31) of Boolean
+     with Component_Size => 1, Size => 24;
 
    --  Type definition for PMC_PCSR0_PID
    type PMC_PCSR0_PID_Field
@@ -249,32 +249,32 @@ package BBF.HRI.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : BBF.HRI.UInt30;
+            Val : BBF.HRI.UInt24;
          when True =>
             --  PID as an array
             Arr : PMC_PCSR0_PID_Field_Array;
       end case;
    end record
-     with Unchecked_Union, Size => 30;
+     with Unchecked_Union, Size => 24;
 
    for PMC_PCSR0_PID_Field use record
-      Val at 0 range 0 .. 29;
-      Arr at 0 range 0 .. 29;
+      Val at 0 range 0 .. 23;
+      Arr at 0 range 0 .. 23;
    end record;
 
    --  Peripheral Clock Status Register 0
    type PMC_PCSR0_Register is record
       --  unspecified
-      Reserved_0_1 : BBF.HRI.UInt2;
-      --  Read-only. Peripheral Clock 2 Status
+      Reserved_0_7 : BBF.HRI.Byte;
+      --  Read-only. Peripheral Clock 8 Status
       PID          : PMC_PCSR0_PID_Field;
    end record
      with Volatile_Full_Access, Object_Size => 32,
           Bit_Order => System.Low_Order_First;
 
    for PMC_PCSR0_Register use record
-      Reserved_0_1 at 0 range 0 .. 1;
-      PID          at 0 range 2 .. 31;
+      Reserved_0_7 at 0 range 0 .. 7;
+      PID          at 0 range 8 .. 31;
    end record;
 
    subtype CKGR_UCKR_UPLLCOUNT_Field is BBF.HRI.UInt4;
@@ -318,26 +318,37 @@ package BBF.HRI.PMC is
       Val_12_Mhz => 2);
 
    subtype CKGR_MOR_MOSCXTST_Field is BBF.HRI.Byte;
-   subtype CKGR_MOR_KEY_Field is BBF.HRI.Byte;
+
+   --  Write Access Password
+   type CKGR_MOR_KEY_Field is
+     (--  Reset value for the field
+      Ckgr_Mor_Key_Field_Reset,
+      --  Writing any other value in this field aborts the write operation.Always
+--  reads as 0.
+      Passwd)
+     with Size => 8;
+   for CKGR_MOR_KEY_Field use
+     (Ckgr_Mor_Key_Field_Reset => 0,
+      Passwd => 55);
 
    --  Main Oscillator Register
    type CKGR_MOR_Register is record
       --  Main Crystal Oscillator Enable
-      MOSCXTEN       : Boolean := True;
+      MOSCXTEN       : Boolean := False;
       --  Main Crystal Oscillator Bypass
       MOSCXTBY       : Boolean := False;
       --  unspecified
       Reserved_2_2   : BBF.HRI.Bit := 16#0#;
       --  Main On-Chip RC Oscillator Enable
-      MOSCRCEN       : Boolean := False;
+      MOSCRCEN       : Boolean := True;
       --  Main On-Chip RC Oscillator Frequency Selection
       MOSCRCF        : CKGR_MOR_MOSCRCF_Field := BBF.HRI.PMC.Val_4_Mhz;
       --  unspecified
       Reserved_7_7   : BBF.HRI.Bit := 16#0#;
       --  Main Crystal Oscillator Start-up Time
       MOSCXTST       : CKGR_MOR_MOSCXTST_Field := 16#0#;
-      --  Password
-      KEY            : CKGR_MOR_KEY_Field := 16#0#;
+      --  Write Access Password
+      KEY            : CKGR_MOR_KEY_Field := Ckgr_Mor_Key_Field_Reset;
       --  Main Oscillator Selection
       MOSCSEL        : Boolean := False;
       --  Clock Failure Detector Enable
@@ -904,9 +915,9 @@ package BBF.HRI.PMC is
       Arr at 0 range 0 .. 15;
    end record;
 
-   --  Fast Startup Mode Register
+   --  Fast Start-up Mode Register
    type PMC_FSMR_Register is record
-      --  Fast Startup Input Enable 0
+      --  Fast Start-up Input Enable 0
       FSTT           : PMC_FSMR_FSTT_Field :=
                         (As_Array => False, Val => 16#0#);
       --  RTT Alarm Enable
@@ -959,9 +970,9 @@ package BBF.HRI.PMC is
       Arr at 0 range 0 .. 15;
    end record;
 
-   --  Fast Startup Polarity Register
+   --  Fast Start-up Polarity Register
    type PMC_FSPR_Register is record
-      --  Fast Startup Input Polarityx
+      --  Fast Start-up Input Polarityx
       FSTP           : PMC_FSPR_FSTP_Field :=
                         (As_Array => False, Val => 16#0#);
       --  unspecified
@@ -990,7 +1001,17 @@ package BBF.HRI.PMC is
       Reserved_1_31 at 0 range 1 .. 31;
    end record;
 
-   subtype PMC_WPMR_WPKEY_Field is BBF.HRI.UInt24;
+   --  Write Protect KEY
+   type PMC_WPMR_WPKEY_Field is
+     (--  Reset value for the field
+      Pmc_Wpmr_Wpkey_Field_Reset,
+      --  Writing any other value in this field aborts the write operation of the
+--  WPEN bit. Always reads as 0.
+      Passwd)
+     with Size => 24;
+   for PMC_WPMR_WPKEY_Field use
+     (Pmc_Wpmr_Wpkey_Field_Reset => 0,
+      Passwd => 5262659);
 
    --  Write Protect Mode Register
    type PMC_WPMR_Register is record
@@ -999,7 +1020,7 @@ package BBF.HRI.PMC is
       --  unspecified
       Reserved_1_7 : BBF.HRI.UInt7 := 16#0#;
       --  Write Protect KEY
-      WPKEY        : PMC_WPMR_WPKEY_Field := 16#0#;
+      WPKEY        : PMC_WPMR_WPKEY_Field := Pmc_Wpmr_Wpkey_Field_Reset;
    end record
      with Volatile_Full_Access, Object_Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1241,9 +1262,9 @@ package BBF.HRI.PMC is
       PMC_SR     : aliased PMC_SR_Register;
       --  Interrupt Mask Register
       PMC_IMR    : aliased PMC_IMR_Register;
-      --  Fast Startup Mode Register
+      --  Fast Start-up Mode Register
       PMC_FSMR   : aliased PMC_FSMR_Register;
-      --  Fast Startup Polarity Register
+      --  Fast Start-up Polarity Register
       PMC_FSPR   : aliased PMC_FSPR_Register;
       --  Fault Output Clear Register
       PMC_FOCR   : aliased PMC_FOCR_Register;
