@@ -104822,6 +104822,7 @@
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
+<!--  SVD2ADA: to use Boolean
               <enumeratedValues>
                 <enumeratedValue>
                   <name>0</name>
@@ -104834,6 +104835,7 @@
                   <value>#1</value>
                 </enumeratedValue>
               </enumeratedValues>
+-->
             </field>
             <field>
               <name>TICKINT</name>
@@ -104841,6 +104843,7 @@
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
+<!--  SVD2ADA: to use Boolean
               <enumeratedValues>
                 <enumeratedValue>
                   <name>0</name>
@@ -104853,6 +104856,7 @@
                   <value>#1</value>
                 </enumeratedValue>
               </enumeratedValues>
+-->
             </field>
             <field>
               <name>CLKSOURCE</name>
@@ -104862,13 +104866,13 @@
               <access>read-write</access>
               <enumeratedValues>
                 <enumeratedValue>
-                  <name>0</name>
-                  <description>external clock</description>
+                  <name>MCK_8</name>
+                  <description>MCK/8</description>
                   <value>#0</value>
                 </enumeratedValue>
                 <enumeratedValue>
-                  <name>1</name>
-                  <description>processor clock</description>
+                  <name>MCK</name>
+                  <description>MCK</description>
                   <value>#1</value>
                 </enumeratedValue>
               </enumeratedValues>
