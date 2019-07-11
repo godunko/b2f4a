@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                           Board Support Layer                            --
+--                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
@@ -37,18 +39,54 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+--  This version of the package provides definitions for Arduino Due/X board.
 
-project BBF is
+--  pragma Restrictions (No_Elaboration_Code);
 
-   for Target use "arm-eabi";
-   for Runtime ("Ada") use "zfp-arduino_due_x";
-   for Object_Dir use "../.objs";
-   for Source_Dirs use ("../source",
-                        "../source/bsl",
-                        "../source/svd");
+with BBF.GPIO;
+private with BBF.HRI.PIO;
+private with BBF.BSL.GPIO;
 
-   package Compiler is
-      for Switches ("Ada") use ("-O2", "-flto");
-   end Compiler;
+package BBF.Board is
 
-end BBF;
+   pragma Preelaborate;
+
+   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class;
+
+   Pin_20   : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class;
+   Pin_21   : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class;
+
+private
+
+   PA17_TWD0_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
+         Pin        => 17);
+   PA18_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
+         Pin        => 18);
+
+   PB12_TWD1_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 12);
+   PB13_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 13);
+
+   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class
+     := PA18_TWCK0_Pin'Access;
+   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class
+     := PA17_TWD0_Pin'Access;
+
+   Pin_20   : constant not null access BBF.GPIO.Pin'Class
+     := PB12_TWD1_Pin'Access;
+   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class
+     := PB12_TWD1_Pin'Access;
+   Pin_21   : constant not null access BBF.GPIO.Pin'Class
+     := PB13_TWCK0_Pin'Access;
+   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class
+     := PB13_TWCK0_Pin'Access;
+
+end BBF.Board;

@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                           Board Support Layer                            --
+--                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
@@ -38,17 +40,16 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-project BBF is
+package body BBF.BSL.GPIO is
 
-   for Target use "arm-eabi";
-   for Runtime ("Ada") use "zfp-arduino_due_x";
-   for Object_Dir use "../.objs";
-   for Source_Dirs use ("../source",
-                        "../source/bsl",
-                        "../source/svd");
+   -------------------
+   -- Set_Direction --
+   -------------------
 
-   package Compiler is
-      for Switches ("Ada") use ("-O2", "-flto");
-   end Compiler;
+   overriding procedure Set_Direction
+    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction) is
+   begin
+      null;
+   end Set_Direction;
 
-end BBF;
+end BBF.BSL.GPIO;

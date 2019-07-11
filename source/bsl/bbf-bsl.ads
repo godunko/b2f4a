@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                           Board Support Layer                            --
+--                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
@@ -38,17 +40,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-project BBF is
+pragma Restrictions (No_Elaboration_Code);
 
-   for Target use "arm-eabi";
-   for Runtime ("Ada") use "zfp-arduino_due_x";
-   for Object_Dir use "../.objs";
-   for Source_Dirs use ("../source",
-                        "../source/bsl",
-                        "../source/svd");
+package BBF.BSL is
 
-   package Compiler is
-      for Switches ("Ada") use ("-O2", "-flto");
-   end Compiler;
+   pragma Pure;
 
-end BBF;
+end BBF.BSL;

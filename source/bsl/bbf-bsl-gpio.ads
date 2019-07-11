@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                           Board Support Layer                            --
+--                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
@@ -37,18 +39,26 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+--  General Purpose Input-Output (GPIO)
 
-project BBF is
+pragma Restrictions (No_Elaboration_Code);
 
-   for Target use "arm-eabi";
-   for Runtime ("Ada") use "zfp-arduino_due_x";
-   for Object_Dir use "../.objs";
-   for Source_Dirs use ("../source",
-                        "../source/bsl",
-                        "../source/svd");
+with BBF.GPIO;
+with BBF.HPL.PIO;
+with BBF.HRI.PIO;
 
-   package Compiler is
-      for Switches ("Ada") use ("-O2", "-flto");
-   end Compiler;
+package BBF.BSL.GPIO is
 
-end BBF;
+   pragma Preelaborate;
+
+   type SAM3_GPIO_Pin
+    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
+     Pin        : BBF.HPL.PIO.PIO_Pin) is
+       limited new BBF.GPIO.Pin with record
+      null;
+   end record;
+
+   overriding procedure Set_Direction
+    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
+
+end BBF.BSL.GPIO;

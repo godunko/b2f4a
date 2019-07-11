@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                        Hardware Abstraction Layer                        --
+--                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
@@ -37,18 +39,26 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+--  General Purpose Input-Output (GPIO)
 
-project BBF is
+pragma Restrictions (No_Elaboration_Code);
 
-   for Target use "arm-eabi";
-   for Runtime ("Ada") use "zfp-arduino_due_x";
-   for Object_Dir use "../.objs";
-   for Source_Dirs use ("../source",
-                        "../source/bsl",
-                        "../source/svd");
+package BBF.GPIO is
 
-   package Compiler is
-      for Switches ("Ada") use ("-O2", "-flto");
-   end Compiler;
+   pragma Pure;
 
-end BBF;
+   type Direction is (Off, Input, Output);
+
+   type Pin is limited interface;
+
+   not overriding procedure Set_Direction
+    (Self : Pin; To : Direction) is abstract;
+   --  Select if the pin data direction is input, output or disabled.
+   --
+   --  If disabled state is not possible, this subprogram raise Program_Error
+   --  exception.
+
+
+   type Port is limited interface;
+
+end BBF.GPIO;

@@ -51,7 +51,9 @@ package BBF.HPL.PIO is
 
    type PIO is private;
 
-   type PIO_Pin_Array is array (0 .. 31) of Boolean
+   type PIO_Pin is range 0 .. 31;
+
+   type PIO_Pin_Array is array (PIO_Pin) of Boolean
      with Component_Size => 1, Size => 32;
 
    type Peripheral_Function is (A, B);
