@@ -39,79 +39,92 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  This version of the package provides definitions for Arduino Due/X board.
 
---  pragma Restrictions (No_Elaboration_Code);
+with BBF.BSL.Clocks;
 
-with BBF.Delays;
-with BBF.GPIO;
-private with BBF.HRI.PIO;
-private with BBF.HRI.SYST;
-private with BBF.BSL.Delays;
-private with BBF.BSL.GPIO;
+package body BBF.BSL.Delays is
 
-package BBF.Board is
+   procedure Delay_Cycles
+    (Self   : SAM_SYSTICK_Controller'Class;
+     Cycles : BBF.HRI.UInt32);
+   --  Delay loop to delay n number of cycles
 
-   pragma Preelaborate;
+   function Milliseconds_To_Cycles
+    (Milliseconds : Interfaces.Unsigned_32) return BBF.HRI.UInt32;
+   --  Retrieve the amount of cycles to delay for the given amount of ms
 
-   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class;
-   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class;
+   ------------------
+   -- Delay_Cycles --
+   ------------------
 
-   Pin_13   : constant not null access BBF.GPIO.Pin'Class;
-   Pin_LED  : constant not null access BBF.GPIO.Pin'Class;
-   Pin_20   : constant not null access BBF.GPIO.Pin'Class;
-   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class;
-   Pin_21   : constant not null access BBF.GPIO.Pin'Class;
-   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class;
+   procedure Delay_Cycles
+    (Self   : SAM_SYSTICK_Controller'Class;
+     Cycles : BBF.HRI.UInt32)
+   is
+      use type BBF.HRI.UInt32;
 
-   Delay_Controller :
-     constant not null access BBF.Delays.Delay_Controller'Class;
+      Rounds    : constant BBF.HRI.UInt32 := Cycles / 16#0100_0000#;
+      --  Number of full rounds of maximal value of SysTick counter.
 
-   procedure Initialize_Delay_Controller;
+      Remaining : constant BBF.HRI.UInt24
+        := BBF.HRI.UInt24 (Cycles and 16#00FF_FFFF#);
+      --  Number of remaining cycles.
 
-private
+   begin
+      for J in 1 .. Rounds loop
+         BBF.HRI.SYST.SYST_Periph.LOAD.RELOAD := 16#FF_FFFF#;
+         BBF.HRI.SYST.SYST_Periph.VAL.CURRENT := 16#00_0000#;
 
-   PA17_TWD0_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
-     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
-         Pin        => 17);
-   PA18_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
-     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
-         Pin        => 18);
+         while not BBF.HRI.SYST.SYST_Periph.CTRL.COUNTFLAG loop
+            null;
+         end loop;
+      end loop;
 
-   PB12_TWD1_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
-     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
-         Pin        => 12);
-   PB13_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
-     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
-         Pin        => 13);
-   PB27_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
-     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
-         Pin        => 27);
+      BBF.HRI.SYST.SYST_Periph.LOAD.RELOAD := Remaining;
+      BBF.HRI.SYST.SYST_Periph.VAL.CURRENT := 16#00_0000#;
 
-   Delay_Instance : aliased BBF.BSL.Delays.SAM_SYSTICK_Controller
-     := (Controller => BBF.HRI.SYST.SYST_Periph'Access);
+      while not BBF.HRI.SYST.SYST_Periph.CTRL.COUNTFLAG loop
+         null;
+      end loop;
+   end Delay_Cycles;
 
-   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class
-     := PA18_TWCK0_Pin'Access;
-   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class
-     := PA17_TWD0_Pin'Access;
+   ------------------------
+   -- Delay_Milliseconds --
+   ------------------------
 
-   Pin_13   : constant not null access BBF.GPIO.Pin'Class
-     := PB27_Pin'Access;
-   Pin_LED  : constant not null access BBF.GPIO.Pin'Class
-     := PB27_Pin'Access;
+   overriding procedure Delay_Milliseconds
+    (Self         : SAM_SYSTICK_Controller;
+     Milliseconds : Interfaces.Unsigned_32) is
+   begin
+      Self.Delay_Cycles (Milliseconds_To_Cycles (Milliseconds));
+   end Delay_Milliseconds;
 
-   Pin_20   : constant not null access BBF.GPIO.Pin'Class
-     := PB12_TWD1_Pin'Access;
-   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class
-     := PB12_TWD1_Pin'Access;
-   Pin_21   : constant not null access BBF.GPIO.Pin'Class
-     := PB13_TWCK0_Pin'Access;
-   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class
-     := PB13_TWCK0_Pin'Access;
+   ----------------
+   -- Initialize --
+   ----------------
 
-   Delay_Controller :
-     constant not null access BBF.Delays.Delay_Controller'Class
-       := Delay_Instance'Access;
+   procedure Initialize (Self : in out SAM_SYSTICK_Controller'Class) is
+   begin
+      BBF.HRI.SYST.SYST_Periph.LOAD.RELOAD := 16#FF_FFFF#;
+      Self.Controller.CTRL :=
+       (ENABLE    => True,
+        CLKSOURCE => BBF.HRI.SYST.MCK,
+        others => <>);
+   end Initialize;
 
-end BBF.Board;
+   ----------------------------
+   -- Milliseconds_To_Cycles --
+   ----------------------------
+
+   function Milliseconds_To_Cycles
+    (Milliseconds : Interfaces.Unsigned_32) return BBF.HRI.UInt32
+   is
+      use type BBF.HRI.UInt32;
+
+   begin
+      return
+        BBF.HRI.UInt32 (Milliseconds)
+          * (BBF.BSL.Clocks.Main_Clock_Frequency / 1_000);
+   end Milliseconds_To_Cycles;
+
+end BBF.BSL.Delays;
