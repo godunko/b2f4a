@@ -42,6 +42,33 @@
 
 package body BBF.BSL.GPIO is
 
+   function Mask
+    (Self : SAM3_GPIO_Pin'Class) return BBF.HPL.PIO.PIO_Pin_Array;
+
+   ----------
+   -- Mask --
+   ----------
+
+   function Mask
+    (Self : SAM3_GPIO_Pin'Class) return BBF.HPL.PIO.PIO_Pin_Array is
+   begin
+      return Result : BBF.HPL.PIO.PIO_Pin_Array := (others => False) do
+         Result (Self.Pin) := True;
+      end return;
+   end Mask;
+
+   ---------
+   -- Set --
+   ---------
+
+   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean) is
+   begin
+      case To is
+         when True  => BBF.HPL.PIO.Set (Self.Controller, Self.Mask);
+         when False => BBF.HPL.PIO.Clear (Self.Controller, Self.Mask);
+      end case;
+   end Set;
+
    -------------------
    -- Set_Direction --
    -------------------
@@ -49,7 +76,13 @@ package body BBF.BSL.GPIO is
    overriding procedure Set_Direction
     (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction) is
    begin
-      null;
+      case To is
+         when BBF.GPIO.Output =>
+            BBF.HPL.PIO.Set_Output (Self.Controller, Self.Mask);
+
+         when others =>
+            raise Program_Error;
+      end case;
    end Set_Direction;
 
 end BBF.BSL.GPIO;

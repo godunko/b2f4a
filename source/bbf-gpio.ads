@@ -58,6 +58,8 @@ package BBF.GPIO is
    --  If disabled state is not possible, this subprogram raise Program_Error
    --  exception.
 
+   not overriding procedure Set (Self : Pin; To : Boolean) is abstract;
+   --  Sets output level on a pin.
 
    type Port is limited interface;
 

@@ -61,4 +61,6 @@ package BBF.BSL.GPIO is
    overriding procedure Set_Direction
     (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
 
+   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+
 end BBF.BSL.GPIO;

@@ -43,13 +43,13 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
-private with BBF.HRI.PIO;
+with BBF.HRI.PIO;
 
 package BBF.HPL.PIO is
 
    pragma Preelaborate;
 
-   type PIO is private;
+   type PIO is access all BBF.HRI.PIO.PIO_Peripheral;
 
    type PIO_Pin is range 0 .. 31;
 
@@ -89,9 +89,5 @@ package BBF.HPL.PIO is
    --  Set a low output level on all the PIOs defined in Mask. This has no
    --  immediate effects on PIOs that are not output, but the PIO controller
    --  will save the value if they are changed to outputs.
-
-private
-
-   type PIO is access all BBF.HRI.PIO.PIO_Peripheral;
 
 end BBF.HPL.PIO;
