@@ -40,6 +40,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+pragma Restrictions (No_Elaboration_Code);
+
+with BBF.Clocks;
+with BBF.HRI.SYSC;
+
 package BBF.BSL.Clocks is
 
    pragma Preelaborate;
@@ -48,5 +53,16 @@ package BBF.BSL.Clocks is
    --  Frequencey of the main clock of the SAM chip on Arduino board. It is
    --  configured by startup code and can't be changed yet, thus defined as
    --  constant.
+
+   type SAM_RTT_Clock_Controller
+    (Controller : not null access BBF.HRI.SYSC.RTT_Peripheral) is
+       limited new BBF.Clocks.Real_Time_Clock_Controller with null record;
+
+   overriding function Clock
+    (Self : SAM_RTT_Clock_Controller) return BBF.Clocks.Time;
+   --  Real-Time Timer (RTT) is used to implement real-time clocks.
+
+   procedure Initialize (Self : in out SAM_RTT_Clock_Controller);
+   --  Initialize real-time clock.
 
 end BBF.BSL.Clocks;

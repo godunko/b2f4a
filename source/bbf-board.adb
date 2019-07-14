@@ -51,4 +51,13 @@ package body BBF.Board is
       Delay_Instance.Initialize;
    end Initialize_Delay_Controller;
 
+   -------------------------------------------
+   -- Initialize_Real_Time_Clock_Controller --
+   -------------------------------------------
+
+   procedure Initialize_Real_Time_Clock_Controller is
+   begin
+      Clock_Instance.Initialize;
+   end Initialize_Real_Time_Clock_Controller;
+
 end BBF.Board;
