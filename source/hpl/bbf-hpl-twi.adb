@@ -112,7 +112,7 @@ package body BBF.HPL.TWI is
 
    function Probe
      (Self    : TWI;
-      Address : Slave_Address) return Boolean
+      Address : BBF.I2C.Device_Address) return Boolean
    is
       SR : BBF.HRI.TWI.TWI0_SR_Register;
 
@@ -301,7 +301,7 @@ package body BBF.HPL.TWI is
 
    procedure Master_Read_Synchronous
      (Self             : TWI;
-      Address          : Slave_Address;
+      Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
       Data             : out Interfaces.Unsigned_8;
       Success          : out Boolean)
@@ -320,7 +320,7 @@ package body BBF.HPL.TWI is
 
    procedure Master_Read_Synchronous
      (Self             : TWI;
-      Address          : Slave_Address;
+      Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
       Data             : out Unsigned_8_Array;
       Success          : out Boolean)
@@ -393,7 +393,7 @@ package body BBF.HPL.TWI is
 
    procedure Master_Write_Synchronous
      (Self             : TWI;
-      Address          : Slave_Address;
+      Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
       Data             : Interfaces.Unsigned_8;
       Success          : out Boolean)
@@ -413,7 +413,7 @@ package body BBF.HPL.TWI is
 
    procedure Master_Write_Synchronous
      (Self             : TWI;
-      Address          : Slave_Address;
+      Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
       Data             : Unsigned_8_Array;
       Success          : out Boolean)

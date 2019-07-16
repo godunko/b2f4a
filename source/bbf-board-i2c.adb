@@ -39,33 +39,16 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  General Purpose Input-Output (GPIO)
 
-pragma Restrictions (No_Elaboration_Code);
+package body BBF.Board.I2C is
 
-with BBF.GPIO;
-with BBF.HPL.PIO;
-with BBF.HRI.PIO;
+   ----------------------
+   -- Initialize_I2C_0 --
+   ----------------------
 
-package BBF.BSL.GPIO is
+   procedure Initialize_I2C_0 is
+   begin
+      TWI0_I2C.Initialize;
+   end Initialize_I2C_0;
 
-   pragma Preelaborate;
-
-   type SAM3_GPIO_Pin
-    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-     Pin        : BBF.HPL.PIO.PIO_Pin) is
-       limited new BBF.GPIO.Pin with record
-      null;
-   end record;
-
-   overriding procedure Set_Direction
-    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
-
-   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
-
-   procedure Set_Peripheral
-    (Self : SAM3_GPIO_Pin'Class;
-     To   : BBF.HPL.PIO.Peripheral_Function);
-   --  Configure pin to be used by given periperal function instead of GPIO.
-
-end BBF.BSL.GPIO;
+end BBF.Board.I2C;

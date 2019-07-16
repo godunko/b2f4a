@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Board Support Layer                            --
+--                        Hardware Abstraction Layer                        --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -39,33 +39,22 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  General Purpose Input-Output (GPIO)
+--  General type for I2C bus
 
 pragma Restrictions (No_Elaboration_Code);
 
-with BBF.GPIO;
-with BBF.HPL.PIO;
-with BBF.HRI.PIO;
+with Interfaces;
 
-package BBF.BSL.GPIO is
+package BBF.I2C is
 
    pragma Preelaborate;
 
-   type SAM3_GPIO_Pin
-    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-     Pin        : BBF.HPL.PIO.PIO_Pin) is
-       limited new BBF.GPIO.Pin with record
-      null;
-   end record;
+   type Device_Address is mod 2 ** 7;
+   for Device_Address'Size use 7;
 
-   overriding procedure Set_Direction
-    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
+   subtype Internal_Address_8 is Interfaces.Unsigned_8;
 
-   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+   type Unsigned_8_Array is
+     array (Positive range <>) of Interfaces.Unsigned_8;
 
-   procedure Set_Peripheral
-    (Self : SAM3_GPIO_Pin'Class;
-     To   : BBF.HPL.PIO.Peripheral_Function);
-   --  Configure pin to be used by given periperal function instead of GPIO.
-
-end BBF.BSL.GPIO;
+end BBF.I2C;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Board Support Layer                            --
+--                        Hardware Abstraction Layer                        --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -39,33 +39,67 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  General Purpose Input-Output (GPIO)
+--  Master mode of I2C bus
 
 pragma Restrictions (No_Elaboration_Code);
 
-with BBF.GPIO;
-with BBF.HPL.PIO;
-with BBF.HRI.PIO;
+with Interfaces;
 
-package BBF.BSL.GPIO is
+with BBF.I2C;
+
+package BBF.I2C_Master is
 
    pragma Preelaborate;
 
-   type SAM3_GPIO_Pin
-    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-     Pin        : BBF.HPL.PIO.PIO_Pin) is
-       limited new BBF.GPIO.Pin with record
-      null;
-   end record;
+   type I2C_Master_Controller is limited interface;
 
-   overriding procedure Set_Direction
-    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
+   not overriding function Probe
+     (Self    : in out I2C_Master_Controller;
+      Address : BBF.I2C.Device_Address) return Boolean is abstract;
+   --  Test if a chip answers a given I2C address.
 
-   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+   not overriding procedure Write_Synchronous
+     (Self             : in out I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : Interfaces.Unsigned_8;
+      Success          : out Boolean) is abstract;
+   --  Write multiple bytes to a I2C slave device.
+   --
+   --  This Subprogram will NOT return until all data has been written or error
+   --  occurred.
 
-   procedure Set_Peripheral
-    (Self : SAM3_GPIO_Pin'Class;
-     To   : BBF.HPL.PIO.Peripheral_Function);
-   --  Configure pin to be used by given periperal function instead of GPIO.
+   not overriding procedure Write_Synchronous
+     (Self             : in out I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : BBF.I2C.Unsigned_8_Array;
+      Success          : out Boolean) is abstract;
+   --  Write multiple bytes to a I2C slave device.
+   --
+   --  This Subprogram will NOT return until all data has been written or error
+   --  occurred.
 
-end BBF.BSL.GPIO;
+   not overriding procedure Read_Synchronous
+     (Self             : in out I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out Interfaces.Unsigned_8;
+      Success          : out Boolean) is abstract;
+   --  Read multiple bytes from a TWI compatible slave device.
+   --
+   --  This subprogram will NOT return until all data has been read or error
+   --  occurs.
+
+   not overriding procedure Read_Synchronous
+     (Self             : in out I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out BBF.I2C.Unsigned_8_Array;
+      Success          : out Boolean) is abstract;
+   --  Read multiple bytes from a TWI compatible slave device.
+   --
+   --  This subprogram will NOT return until all data has been read or error
+   --  occurs.
+
+end BBF.I2C_Master;

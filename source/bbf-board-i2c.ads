@@ -39,33 +39,29 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  General Purpose Input-Output (GPIO)
+--  I2C interfaces for Arduino Due/X board
 
-pragma Restrictions (No_Elaboration_Code);
+private with BBF.BSL.I2C_Masters;
+private with BBF.HPL.PIO;
+private with BBF.HRI.TWI;
+with BBF.I2C_Master;
 
-with BBF.GPIO;
-with BBF.HPL.PIO;
-with BBF.HRI.PIO;
+package BBF.Board.I2C is
 
-package BBF.BSL.GPIO is
+   I2C0 : constant not null access BBF.I2C_Master.I2C_Master_Controller'Class;
 
-   pragma Preelaborate;
+   procedure Initialize_I2C_0;
 
-   type SAM3_GPIO_Pin
-    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-     Pin        : BBF.HPL.PIO.PIO_Pin) is
-       limited new BBF.GPIO.Pin with record
-      null;
-   end record;
+private
 
-   overriding procedure Set_Direction
-    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
+   TWI0_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
+     := (Controller   => BBF.HRI.TWI.TWI0_Periph'Access,
+         SCL          => PA18_TWCK0_Pin'Access,
+         SCL_Function => BBF.HPL.PIO.A,
+         SDA          => PA17_TWD0_Pin'Access,
+         SDA_Function => BBF.HPL.PIO.A);
 
-   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+   I2C0 : constant not null access BBF.I2C_Master.I2C_Master_Controller'Class
+     := TWI0_I2C'Access;
 
-   procedure Set_Peripheral
-    (Self : SAM3_GPIO_Pin'Class;
-     To   : BBF.HPL.PIO.Peripheral_Function);
-   --  Configure pin to be used by given periperal function instead of GPIO.
-
-end BBF.BSL.GPIO;
+end BBF.Board.I2C;

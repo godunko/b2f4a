@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Hardware Proxy Layer                           --
+--                           Board Support Layer                            --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -39,85 +39,58 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  Two-wire Interface (TWI)
-
-pragma Restrictions (No_Elaboration_Code);
+--  I2C Bus Master on top of TWI controller
 
 with Interfaces;
 
-private with BBF.HRI.TWI;
+with BBF.BSL.GPIO;
+with BBF.HPL.PIO;
+with BBF.HRI.TWI;
+with BBF.I2C;
+with BBF.I2C_Master;
 
-package BBF.HPL.TWI is
+package BBF.BSL.I2C_Masters is
 
-   pragma Preelaborate;
+   type SAM3_I2C_Master_Controller
+    (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
+     SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+     SCL_Function : BBF.HPL.PIO.Peripheral_Function;
+     SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+     SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
+       limited new BBF.I2C_Master.I2C_Master_Controller with null record;
 
-   type TWI is private;
+   procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
 
-   type Slave_Address is mod 2 ** 7;
-   for Slave_Address'Size use 7;
+   overriding function Probe
+    (Self    : in out SAM3_I2C_Master_Controller;
+     Address : BBF.I2C.Device_Address) return Boolean;
 
-   function TWI0 return TWI;
-   function TWI1 return TWI;
+   overriding procedure Write_Synchronous
+    (Self             : in out SAM3_I2C_Master_Controller;
+     Address          : BBF.I2C.Device_Address;
+     Internal_Address : BBF.I2C.Internal_Address_8;
+     Data             : Interfaces.Unsigned_8;
+     Success          : out Boolean);
 
-   type Unsigned_8_Array is array (Positive range <>) of Interfaces.Unsigned_8;
+   overriding procedure Write_Synchronous
+    (Self             : in out SAM3_I2C_Master_Controller;
+     Address          : BBF.I2C.Device_Address;
+     Internal_Address : BBF.I2C.Internal_Address_8;
+     Data             : BBF.I2C.Unsigned_8_Array;
+     Success          : out Boolean);
 
-   procedure Initialize_Master
-     (Self                 : TWI;
-      Main_Clock_Frequency : Interfaces.Unsigned_32;
-      Speed                : Interfaces.Unsigned_32);
-   --  Initialize TWI master mode.
+   overriding procedure Read_Synchronous
+    (Self             : in out SAM3_I2C_Master_Controller;
+     Address          : BBF.I2C.Device_Address;
+     Internal_Address : Interfaces.Unsigned_8;
+     Data             : out Interfaces.Unsigned_8;
+     Success          : out Boolean);
 
-   function Probe
-     (Self    : TWI;
-      Address : Slave_Address) return Boolean;
-   --  Test if a chip answers a given I2C address.
+   overriding procedure Read_Synchronous
+    (Self             : in out SAM3_I2C_Master_Controller;
+     Address          : BBF.I2C.Device_Address;
+     Internal_Address : Interfaces.Unsigned_8;
+     Data             : out BBF.I2C.Unsigned_8_Array;
+     Success          : out Boolean);
 
-   procedure Master_Write_Synchronous
-     (Self             : TWI;
-      Address          : Slave_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : Interfaces.Unsigned_8;
-      Success          : out Boolean);
-   --  Write multiple bytes to a TWI compatible slave device.
-   --
-   --  This Subprogram will NOT return until all data has been written or error
-   --  occurred.
-
-   procedure Master_Write_Synchronous
-     (Self             : TWI;
-      Address          : Slave_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : Unsigned_8_Array;
-      Success          : out Boolean);
-   --  Write multiple bytes to a TWI compatible slave device.
-   --
-   --  This Subprogram will NOT return until all data has been written or error
-   --  occurred.
-
-   procedure Master_Read_Synchronous
-     (Self             : TWI;
-      Address          : Slave_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Interfaces.Unsigned_8;
-      Success          : out Boolean);
-   --  Read multiple bytes from a TWI compatible slave device.
-   --
-   --  This subprogram will NOT return until all data has been read or error
-   --  occurs.
-
-   procedure Master_Read_Synchronous
-     (Self             : TWI;
-      Address          : Slave_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Unsigned_8_Array;
-      Success          : out Boolean);
-   --  Read multiple bytes from a TWI compatible slave device.
-   --
-   --  This subprogram will NOT return until all data has been read or error
-   --  occurs.
-
-private
-
-   type TWI is access all BBF.HRI.TWI.TWI_Peripheral;
-
-end BBF.HPL.TWI;
+end BBF.BSL.I2C_Masters;

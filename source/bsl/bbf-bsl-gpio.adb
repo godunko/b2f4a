@@ -85,4 +85,15 @@ package body BBF.BSL.GPIO is
       end case;
    end Set_Direction;
 
+   --------------------
+   -- Set_Peripheral --
+   --------------------
+
+   procedure Set_Peripheral
+    (Self : SAM3_GPIO_Pin'Class;
+     To   : BBF.HPL.PIO.Peripheral_Function) is
+   begin
+      BBF.HPL.PIO.Set_Peripheral (Self.Controller, Self.Mask, To);
+   end Set_Peripheral;
+
 end BBF.BSL.GPIO;

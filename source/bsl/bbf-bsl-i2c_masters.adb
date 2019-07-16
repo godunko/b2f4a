@@ -39,33 +39,104 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  General Purpose Input-Output (GPIO)
 
-pragma Restrictions (No_Elaboration_Code);
+with BBF.BSL.Clocks;
+with BBF.HPL.PMC;
+with BBF.HPL.TWI;
 
-with BBF.GPIO;
-with BBF.HPL.PIO;
-with BBF.HRI.PIO;
+package body BBF.BSL.I2C_Masters is
 
-package BBF.BSL.GPIO is
+   ----------------
+   -- Initialize --
+   ----------------
 
-   pragma Preelaborate;
+   procedure Initialize (Self : in out SAM3_I2C_Master_Controller) is
+   begin
+      BBF.HPL.PMC.Enable_Peripheral_Clock (BBF.HPL.PMC.Two_Wire_Interface_0);
+      --  XXX Another ID must be used for TWI1 controller
+      Self.SCL.Set_Peripheral (Self.SCL_Function);
+      Self.SDA.Set_Peripheral (Self.SDA_Function);
+      BBF.HPL.TWI.Initialize_Master
+       (Self.Controller, BBF.BSL.Clocks.Main_Clock_Frequency, 384_000);
+   end Initialize;
 
-   type SAM3_GPIO_Pin
-    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-     Pin        : BBF.HPL.PIO.PIO_Pin) is
-       limited new BBF.GPIO.Pin with record
-      null;
-   end record;
+   -----------
+   -- Probe --
+   -----------
 
-   overriding procedure Set_Direction
-    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
+   overriding function Probe
+    (Self    : in out SAM3_I2C_Master_Controller;
+     Address : BBF.I2C.Device_Address) return Boolean is
+   begin
+      return BBF.HPL.TWI.Probe (Self.Controller, Address);
+   end Probe;
 
-   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+   ----------------------
+   -- Read_Synchronous --
+   ----------------------
 
-   procedure Set_Peripheral
-    (Self : SAM3_GPIO_Pin'Class;
-     To   : BBF.HPL.PIO.Peripheral_Function);
-   --  Configure pin to be used by given periperal function instead of GPIO.
+   overriding procedure Read_Synchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out Interfaces.Unsigned_8;
+      Success          : out Boolean) is
+   begin
+      BBF.HPL.TWI.Master_Read_Synchronous
+       (Self.Controller, Address, Internal_Address, Data, Success);
+   end Read_Synchronous;
 
-end BBF.BSL.GPIO;
+   ----------------------
+   -- Read_Synchronous --
+   ----------------------
+
+   overriding procedure Read_Synchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out BBF.I2C.Unsigned_8_Array;
+      Success          : out Boolean) is
+   begin
+      BBF.HPL.TWI.Master_Read_Synchronous
+       (Self.Controller,
+        Address,
+        Internal_Address,
+        BBF.HPL.TWI.Unsigned_8_Array (Data),
+        Success);
+   end Read_Synchronous;
+
+   -----------------------
+   -- Write_Synchronous --
+   -----------------------
+
+   overriding procedure Write_Synchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : Interfaces.Unsigned_8;
+      Success          : out Boolean) is
+   begin
+      BBF.HPL.TWI.Master_Write_Synchronous
+       (Self.Controller, Address, Internal_Address, Data, Success);
+   end Write_Synchronous;
+
+   -----------------------
+   -- Write_Synchronous --
+   -----------------------
+
+   overriding procedure Write_Synchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : BBF.I2C.Unsigned_8_Array;
+      Success          : out Boolean) is
+   begin
+      BBF.HPL.TWI.Master_Write_Synchronous
+       (Self.Controller,
+        Address,
+        Internal_Address,
+        BBF.HPL.TWI.Unsigned_8_Array (Data),
+        Success);
+   end Write_Synchronous;
+
+end BBF.BSL.I2C_Masters;

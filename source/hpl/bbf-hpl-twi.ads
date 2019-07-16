@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Board Support Layer                            --
+--                           Hardware Proxy Layer                           --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -39,33 +39,79 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  General Purpose Input-Output (GPIO)
+--  Two-wire Interface (TWI)
 
 pragma Restrictions (No_Elaboration_Code);
 
-with BBF.GPIO;
-with BBF.HPL.PIO;
-with BBF.HRI.PIO;
+with Interfaces;
 
-package BBF.BSL.GPIO is
+with BBF.HRI.TWI;
+with BBF.I2C;
+
+package BBF.HPL.TWI is
 
    pragma Preelaborate;
 
-   type SAM3_GPIO_Pin
-    (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-     Pin        : BBF.HPL.PIO.PIO_Pin) is
-       limited new BBF.GPIO.Pin with record
-      null;
-   end record;
+   type TWI is access all BBF.HRI.TWI.TWI_Peripheral;
 
-   overriding procedure Set_Direction
-    (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
+   function TWI0 return TWI;
+   function TWI1 return TWI;
 
-   overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+   type Unsigned_8_Array is array (Positive range <>) of Interfaces.Unsigned_8;
 
-   procedure Set_Peripheral
-    (Self : SAM3_GPIO_Pin'Class;
-     To   : BBF.HPL.PIO.Peripheral_Function);
-   --  Configure pin to be used by given periperal function instead of GPIO.
+   procedure Initialize_Master
+     (Self                 : TWI;
+      Main_Clock_Frequency : Interfaces.Unsigned_32;
+      Speed                : Interfaces.Unsigned_32);
+   --  Initialize TWI master mode.
 
-end BBF.BSL.GPIO;
+   function Probe
+     (Self    : TWI;
+      Address : BBF.I2C.Device_Address) return Boolean;
+   --  Test if a chip answers a given I2C address.
+
+   procedure Master_Write_Synchronous
+     (Self             : TWI;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : Interfaces.Unsigned_8;
+      Success          : out Boolean);
+   --  Write multiple bytes to a TWI compatible slave device.
+   --
+   --  This Subprogram will NOT return until all data has been written or error
+   --  occurred.
+
+   procedure Master_Write_Synchronous
+     (Self             : TWI;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : Unsigned_8_Array;
+      Success          : out Boolean);
+   --  Write multiple bytes to a TWI compatible slave device.
+   --
+   --  This Subprogram will NOT return until all data has been written or error
+   --  occurred.
+
+   procedure Master_Read_Synchronous
+     (Self             : TWI;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out Interfaces.Unsigned_8;
+      Success          : out Boolean);
+   --  Read multiple bytes from a TWI compatible slave device.
+   --
+   --  This subprogram will NOT return until all data has been read or error
+   --  occurs.
+
+   procedure Master_Read_Synchronous
+     (Self             : TWI;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out Unsigned_8_Array;
+      Success          : out Boolean);
+   --  Read multiple bytes from a TWI compatible slave device.
+   --
+   --  This subprogram will NOT return until all data has been read or error
+   --  occurs.
+
+end BBF.HPL.TWI;
