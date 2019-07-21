@@ -44,11 +44,11 @@
 private with BBF.BSL.I2C_Masters;
 private with BBF.HPL.PIO;
 private with BBF.HRI.TWI;
-with BBF.I2C_Master;
+with BBF.I2C.Master;
 
 package BBF.Board.I2C is
 
-   I2C0 : constant not null access BBF.I2C_Master.I2C_Master_Controller'Class;
+   I2C0 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class;
 
    procedure Initialize_I2C_0;
 
@@ -61,7 +61,7 @@ private
          SDA          => PA17_TWD0_Pin'Access,
          SDA_Function => BBF.HPL.PIO.A);
 
-   I2C0 : constant not null access BBF.I2C_Master.I2C_Master_Controller'Class
+   I2C0 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class
      := TWI0_I2C'Access;
 
 end BBF.Board.I2C;

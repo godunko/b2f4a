@@ -45,9 +45,7 @@ pragma Restrictions (No_Elaboration_Code);
 
 with Interfaces;
 
-with BBF.I2C;
-
-package BBF.I2C_Master is
+package BBF.I2C.Master is
 
    pragma Preelaborate;
 
@@ -102,4 +100,4 @@ package BBF.I2C_Master is
    --  This subprogram will NOT return until all data has been read or error
    --  occurs.
 
-end BBF.I2C_Master;
+end BBF.I2C.Master;

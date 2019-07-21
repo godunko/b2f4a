@@ -46,8 +46,7 @@ with Interfaces;
 with BBF.BSL.GPIO;
 with BBF.HPL.PIO;
 with BBF.HRI.TWI;
-with BBF.I2C;
-with BBF.I2C_Master;
+with BBF.I2C.Master;
 
 package BBF.BSL.I2C_Masters is
 
@@ -57,7 +56,7 @@ package BBF.BSL.I2C_Masters is
      SCL_Function : BBF.HPL.PIO.Peripheral_Function;
      SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
      SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
-       limited new BBF.I2C_Master.I2C_Master_Controller with null record;
+       limited new BBF.I2C.Master.I2C_Master_Controller with null record;
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
 
