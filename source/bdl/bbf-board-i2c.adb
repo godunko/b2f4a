@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Board Support Layer                            --
+--                         Board Description Layer                          --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -40,24 +40,15 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-package body BBF.Board is
+package body BBF.Board.I2C is
 
-   ---------------------------------
-   -- Initialize_Delay_Controller --
-   ---------------------------------
+   ----------------------
+   -- Initialize_I2C_0 --
+   ----------------------
 
-   procedure Initialize_Delay_Controller is
+   procedure Initialize_I2C_0 is
    begin
-      Delay_Instance.Initialize;
-   end Initialize_Delay_Controller;
+      TWI0_I2C.Initialize;
+   end Initialize_I2C_0;
 
-   -------------------------------------------
-   -- Initialize_Real_Time_Clock_Controller --
-   -------------------------------------------
-
-   procedure Initialize_Real_Time_Clock_Controller is
-   begin
-      Clock_Instance.Initialize;
-   end Initialize_Real_Time_Clock_Controller;
-
-end BBF.Board;
+end BBF.Board.I2C;

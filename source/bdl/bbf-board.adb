@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Board Support Layer                            --
+--                         Board Description Layer                          --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -39,29 +39,25 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  I2C interfaces for Arduino Due/X board
 
-private with BBF.BSL.I2C_Masters;
-private with BBF.HPL.PIO;
-private with BBF.HRI.TWI;
-with BBF.I2C_Master;
+package body BBF.Board is
 
-package BBF.Board.I2C is
+   ---------------------------------
+   -- Initialize_Delay_Controller --
+   ---------------------------------
 
-   I2C0 : constant not null access BBF.I2C_Master.I2C_Master_Controller'Class;
+   procedure Initialize_Delay_Controller is
+   begin
+      Delay_Instance.Initialize;
+   end Initialize_Delay_Controller;
 
-   procedure Initialize_I2C_0;
+   -------------------------------------------
+   -- Initialize_Real_Time_Clock_Controller --
+   -------------------------------------------
 
-private
+   procedure Initialize_Real_Time_Clock_Controller is
+   begin
+      Clock_Instance.Initialize;
+   end Initialize_Real_Time_Clock_Controller;
 
-   TWI0_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
-     := (Controller   => BBF.HRI.TWI.TWI0_Periph'Access,
-         SCL          => PA18_TWCK0_Pin'Access,
-         SCL_Function => BBF.HPL.PIO.A,
-         SDA          => PA17_TWD0_Pin'Access,
-         SDA_Function => BBF.HPL.PIO.A);
-
-   I2C0 : constant not null access BBF.I2C_Master.I2C_Master_Controller'Class
-     := TWI0_I2C'Access;
-
-end BBF.Board.I2C;
+end BBF.Board;

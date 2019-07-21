@@ -2,7 +2,7 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Board Support Layer                            --
+--                         Board Description Layer                          --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
@@ -39,16 +39,94 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+--  This version of the package provides definitions for Arduino Due/X board.
 
-package body BBF.Board.I2C is
+--  pragma Restrictions (No_Elaboration_Code);
 
-   ----------------------
-   -- Initialize_I2C_0 --
-   ----------------------
+with BBF.Clocks;
+with BBF.Delays;
+with BBF.GPIO;
+private with BBF.HRI.PIO;
+private with BBF.HRI.SYSC;
+private with BBF.HRI.SYST;
+private with BBF.BSL.Clocks;
+private with BBF.BSL.Delays;
+private with BBF.BSL.GPIO;
 
-   procedure Initialize_I2C_0 is
-   begin
-      TWI0_I2C.Initialize;
-   end Initialize_I2C_0;
+package BBF.Board is
 
-end BBF.Board.I2C;
+   pragma Preelaborate;
+
+   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class;
+
+   Pin_13   : constant not null access BBF.GPIO.Pin'Class;
+   Pin_LED  : constant not null access BBF.GPIO.Pin'Class;
+   Pin_20   : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class;
+   Pin_21   : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class;
+
+   Delay_Controller :
+     constant not null access BBF.Delays.Delay_Controller'Class;
+
+   procedure Initialize_Delay_Controller;
+
+   Real_Time_Clock_Controller :
+     constant not null access BBF.Clocks.Real_Time_Clock_Controller'Class;
+
+   procedure Initialize_Real_Time_Clock_Controller;
+
+private
+
+   PA17_TWD0_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
+         Pin        => 17);
+   PA18_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
+         Pin        => 18);
+
+   PB12_TWD1_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 12);
+   PB13_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 13);
+   PB27_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 27);
+
+   Delay_Instance : aliased BBF.BSL.Delays.SAM_SYSTICK_Controller
+     := (Controller => BBF.HRI.SYST.SYST_Periph'Access);
+
+   Clock_Instance : aliased BBF.BSL.Clocks.SAM_RTT_Clock_Controller
+     := (Controller => BBF.HRI.SYSC.RTT_Periph'Access);
+
+   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class
+     := PA18_TWCK0_Pin'Access;
+   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class
+     := PA17_TWD0_Pin'Access;
+
+   Pin_13   : constant not null access BBF.GPIO.Pin'Class
+     := PB27_Pin'Access;
+   Pin_LED  : constant not null access BBF.GPIO.Pin'Class
+     := PB27_Pin'Access;
+
+   Pin_20   : constant not null access BBF.GPIO.Pin'Class
+     := PB12_TWD1_Pin'Access;
+   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class
+     := PB12_TWD1_Pin'Access;
+   Pin_21   : constant not null access BBF.GPIO.Pin'Class
+     := PB13_TWCK0_Pin'Access;
+   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class
+     := PB13_TWCK0_Pin'Access;
+
+   Delay_Controller :
+     constant not null access BBF.Delays.Delay_Controller'Class
+       := Delay_Instance'Access;
+
+   Real_Time_Clock_Controller :
+     constant not null access BBF.Clocks.Real_Time_Clock_Controller'Class
+       := Clock_Instance'Access;
+
+end BBF.Board;
