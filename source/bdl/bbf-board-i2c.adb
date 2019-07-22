@@ -51,4 +51,13 @@ package body BBF.Board.I2C is
       TWI0_I2C.Initialize;
    end Initialize_I2C_0;
 
+   ----------------------
+   -- Initialize_I2C_1 --
+   ----------------------
+
+   procedure Initialize_I2C_1 is
+   begin
+      TWI1_I2C.Initialize;
+   end Initialize_I2C_1;
+
 end BBF.Board.I2C;

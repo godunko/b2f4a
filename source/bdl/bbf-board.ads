@@ -89,7 +89,7 @@ private
    PB12_TWD1_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
      := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
          Pin        => 12);
-   PB13_TWCK0_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+   PB13_TWCK1_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
      := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
          Pin        => 13);
    PB27_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
@@ -117,9 +117,9 @@ private
    Pin_SDA  : constant not null access BBF.GPIO.Pin'Class
      := PB12_TWD1_Pin'Access;
    Pin_21   : constant not null access BBF.GPIO.Pin'Class
-     := PB13_TWCK0_Pin'Access;
+     := PB13_TWCK1_Pin'Access;
    Pin_SCL  : constant not null access BBF.GPIO.Pin'Class
-     := PB13_TWCK0_Pin'Access;
+     := PB13_TWCK1_Pin'Access;
 
    Delay_Controller :
      constant not null access BBF.Delays.Delay_Controller'Class

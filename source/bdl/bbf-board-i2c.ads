@@ -49,8 +49,10 @@ with BBF.I2C.Master;
 package BBF.Board.I2C is
 
    I2C0 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class;
+   I2C1 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class;
 
    procedure Initialize_I2C_0;
+   procedure Initialize_I2C_1;
 
 private
 
@@ -60,8 +62,16 @@ private
          SCL_Function => BBF.HPL.PIO.A,
          SDA          => PA17_TWD0_Pin'Access,
          SDA_Function => BBF.HPL.PIO.A);
+   TWI1_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
+     := (Controller   => BBF.HRI.TWI.TWI1_Periph'Access,
+         SCL          => PB13_TWCK1_Pin'Access,
+         SCL_Function => BBF.HPL.PIO.A,
+         SDA          => PB12_TWD1_Pin'Access,
+         SDA_Function => BBF.HPL.PIO.A);
 
    I2C0 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class
      := TWI0_I2C'Access;
+   I2C1 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class
+     := TWI1_I2C'Access;
 
 end BBF.Board.I2C;
