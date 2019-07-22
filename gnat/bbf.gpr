@@ -46,6 +46,7 @@ project BBF is
    for Source_Dirs use ("../source",
                         "../source/bdl",
                         "../source/bsl",
+                        "../source/drivers",
                         "../source/hpl",
                         "../source/svd");
 
