@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                        Runtime Library Component                         --
+--                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
 -- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
@@ -35,18 +37,9 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  Hardware configuration and initialization.
 
-with BBF.Board.I2C;
-with BBF.Drivers.BNO055;
+package BBF.Drivers is
 
-package Hexapod.Hardware is
+   pragma Pure;
 
-   Body_Motion_Sensor : aliased BBF.Drivers.BNO055.BNO055_Sensor
-    (Controller          => BBF.Board.I2C.I2C0,
-     Clock               => BBF.Board.Real_Time_Clock_Controller,
-     Alternative_Address => False);
-
-   procedure Initialize_Hardware;
-
-end Hexapod.Hardware;
+end BBF.Drivers;

@@ -44,8 +44,7 @@ package body Hexapod.Hardware is
 
    procedure Initialize_Hardware is
    begin
-      Body_Motion_Sensor.Initialize;
-      Body_Motion_Sensor.Configure;  --  ???
+      Body_Motion_Sensor.Initialize (BBF.Drivers.BNO055.NDOF);
    end Initialize_Hardware;
 
 end Hexapod.Hardware;

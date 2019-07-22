@@ -2,6 +2,8 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
+--                        Runtime Library Component                         --
+--                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
 -- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
@@ -35,18 +37,71 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  Hardware configuration and initialization.
+--  Driver for BNO055: Intelligent 9-axis absolute orientation sensor
 
-with BBF.Board.I2C;
-with BBF.Drivers.BNO055;
+with BBF.Clocks;
+with BBF.I2C.Master;
+with BBF.Motion;
 
-package Hexapod.Hardware is
+package BBF.Drivers.BNO055 is
 
-   Body_Motion_Sensor : aliased BBF.Drivers.BNO055.BNO055_Sensor
-    (Controller          => BBF.Board.I2C.I2C0,
-     Clock               => BBF.Board.Real_Time_Clock_Controller,
-     Alternative_Address => False);
+   pragma Preelaborate;
 
-   procedure Initialize_Hardware;
+   type Operation_Mode is
+    (Configuration,
+     Accelerometer_Only,
+     Magnetometer_Only,
+     Gyroscope_Only,
+     Accelerometer_Magnetometer,
+     Accelerometer_Gyroscope,
+     Magnetometer_Gyroscope,
+     Accelerometer_Magnetometer_Gyroscope,
+     Inertial_Measurement_Unit,
+     Compass,
+     Magnetometer_For_Gyroscope,
+     NDOF_FMC_Off,
+     NDOF)
+       with Size => 4;
+   for Operation_Mode use
+    (Configuration                        => 2#0000#,
+     Accelerometer_Only                   => 2#0001#,
+     Magnetometer_Only                    => 2#0010#,
+     Gyroscope_Only                       => 2#0011#,
+     Accelerometer_Magnetometer           => 2#0100#,
+     Accelerometer_Gyroscope              => 2#0101#,
+     Magnetometer_Gyroscope               => 2#0110#,
+     Accelerometer_Magnetometer_Gyroscope => 2#0111#,
+     Inertial_Measurement_Unit            => 2#1000#,
+     Compass                              => 2#1001#,
+     Magnetometer_For_Gyroscope           => 2#1010#,
+     NDOF_FMC_Off                         => 2#1011#,
+     NDOF                                 => 2#1100#);
 
-end Hexapod.Hardware;
+   type BNO055_Sensor
+    (Controller          :
+       not null access BBF.I2C.Master.I2C_Master_Controller'Class;
+     Clock               :
+       not null access BBF.Clocks.Real_Time_Clock_Controller'Class;
+     Alternative_Address : Boolean)
+       is limited new BBF.Motion.Motion_Sensor with null record;
+
+   procedure Initialize
+    (Self : in out BNO055_Sensor'Class;
+     Mode : Operation_Mode);
+   --  Initialize sensor and configure it.
+
+--   overriding procedure Get_Angular_Velocity
+--    (Self      : in out BNO055_Sensor;
+--     X         : out Angular_Velocity;
+--     Y         : out Angular_Velocity;
+--     Z         : out Angular_Velocity;
+--     Timestamp : out BBF.Clocks.Time);
+
+   overriding procedure Get_Gravity_Vector
+    (Self      : in out BNO055_Sensor;
+     X         : out BBF.Motion.Linear_Acceleration;
+     Y         : out BBF.Motion.Linear_Acceleration;
+     Z         : out BBF.Motion.Linear_Acceleration;
+     Timestamp : out BBF.Clocks.Time);
+
+end BBF.Drivers.BNO055;
