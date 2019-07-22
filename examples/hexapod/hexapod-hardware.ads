@@ -39,6 +39,7 @@
 
 with BBF.Board.I2C;
 with BBF.Drivers.BNO055;
+with BBF.Drivers.PCA9685;
 
 package Hexapod.Hardware is
 
@@ -46,6 +47,11 @@ package Hexapod.Hardware is
     (Controller          => BBF.Board.I2C.I2C0,
      Clock               => BBF.Board.Real_Time_Clock_Controller,
      Alternative_Address => False);
+
+   Servo_Controller_Left  : aliased BBF.Drivers.PCA9685.PCA9685_Controller
+    (Bus => BBF.Board.I2C.I2C0);
+   Servo_Controller_Right : aliased BBF.Drivers.PCA9685.PCA9685_Controller
+    (Bus => BBF.Board.I2C.I2C1);
 
    procedure Initialize_Hardware;
 
