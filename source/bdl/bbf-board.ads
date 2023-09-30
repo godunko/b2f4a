@@ -42,8 +42,6 @@
 
 --  This version of the package provides definitions for Arduino Due/X board.
 
-pragma Restrictions (No_Elaboration_Code);
-
 with BBF.Clocks;
 with BBF.Delays;
 with BBF.GPIO;
