@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,9 +39,10 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 --  This version of the package provides definitions for Arduino Due/X board.
 
---  pragma Restrictions (No_Elaboration_Code);
+pragma Restrictions (No_Elaboration_Code);
 
 with BBF.Clocks;
 with BBF.Delays;
@@ -57,15 +58,14 @@ package BBF.Board is
 
    pragma Preelaborate;
 
-   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class;
-   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SCL1   : constant not null access BBF.GPIO.Pin'Class;
+   Pin_SDA1   : constant not null access BBF.GPIO.Pin'Class;
 
-   Pin_13   : constant not null access BBF.GPIO.Pin'Class;
-   Pin_LED  : constant not null access BBF.GPIO.Pin'Class;
-   Pin_20   : constant not null access BBF.GPIO.Pin'Class;
-   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class;
-   Pin_21   : constant not null access BBF.GPIO.Pin'Class;
-   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class;
+   Pin_13_LED : constant not null access BBF.GPIO.Pin'Class;
+   Pin_20_SDA : constant not null access BBF.GPIO.Pin'Class;
+   Pin_21_SCL : constant not null access BBF.GPIO.Pin'Class;
+   Pin_52     : constant not null access BBF.GPIO.Pin'Class;
+   Pin_53     : constant not null access BBF.GPIO.Pin'Class;
 
    Delay_Controller :
      constant not null access BBF.Delays.Delay_Controller'Class;
@@ -92,6 +92,12 @@ private
    PB13_TWCK1_Pin : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
      := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
          Pin        => 13);
+   PB14_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 14);
+   PB21_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
+         Pin        => 21);
    PB27_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
      := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
          Pin        => 27);
@@ -102,24 +108,22 @@ private
    Clock_Instance : aliased BBF.BSL.Clocks.SAM_RTT_Clock_Controller
      := (Controller => BBF.HRI.SYSC.RTT_Periph'Access);
 
-   Pin_SCL1 : constant not null access BBF.GPIO.Pin'Class
+   Pin_SCL1   : constant not null access BBF.GPIO.Pin'Class
      := PA18_TWCK0_Pin'Access;
-   Pin_SDA1 : constant not null access BBF.GPIO.Pin'Class
+   Pin_SDA1   : constant not null access BBF.GPIO.Pin'Class
      := PA17_TWD0_Pin'Access;
 
-   Pin_13   : constant not null access BBF.GPIO.Pin'Class
-     := PB27_Pin'Access;
-   Pin_LED  : constant not null access BBF.GPIO.Pin'Class
+   Pin_13_LED : constant not null access BBF.GPIO.Pin'Class
      := PB27_Pin'Access;
 
-   Pin_20   : constant not null access BBF.GPIO.Pin'Class
+   Pin_20_SDA : constant not null access BBF.GPIO.Pin'Class
      := PB12_TWD1_Pin'Access;
-   Pin_SDA  : constant not null access BBF.GPIO.Pin'Class
-     := PB12_TWD1_Pin'Access;
-   Pin_21   : constant not null access BBF.GPIO.Pin'Class
+   Pin_21_SCL : constant not null access BBF.GPIO.Pin'Class
      := PB13_TWCK1_Pin'Access;
-   Pin_SCL  : constant not null access BBF.GPIO.Pin'Class
-     := PB13_TWCK1_Pin'Access;
+   Pin_52     : constant not null access BBF.GPIO.Pin'Class
+     := PB21_Pin'Access;
+   Pin_53     : constant not null access BBF.GPIO.Pin'Class
+     := PB14_Pin'Access;
 
    Delay_Controller :
      constant not null access BBF.Delays.Delay_Controller'Class
