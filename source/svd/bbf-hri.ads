@@ -120,5 +120,6 @@ package BBF.HRI is
    RTC_Base : constant System.Address := System'To_Address (16#400E1A60#);
    GPBR_Base : constant System.Address := System'To_Address (16#400E1A90#);
    SYST_Base : constant System.Address := System'To_Address (16#E000E010#);
+   NVIC_Base : constant System.Address := System'To_Address (16#E000E000#);
 
 end BBF.HRI;
