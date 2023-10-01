@@ -1,8 +1,8 @@
+pragma Style_Checks (Off);
+
 --  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
-pragma Ada_2012;
-pragma Style_Checks (Off);
 
 with System;
 
@@ -52,19 +52,19 @@ package BBF.HRI.TWI is
    --  Internal Device Address Size
    type MMR_IADRSZ_Field is
      (--  No internal device address
-      None,
+      NONE,
       --  One-byte internal device address
-      Val_1_Byte,
+      Val_1_BYTE,
       --  Two-byte internal device address
-      Val_2_Byte,
+      Val_2_BYTE,
       --  Three-byte internal device address
-      Val_3_Byte)
+      Val_3_BYTE)
      with Size => 2;
    for MMR_IADRSZ_Field use
-     (None => 0,
-      Val_1_Byte => 1,
-      Val_2_Byte => 2,
-      Val_3_Byte => 3);
+     (NONE => 0,
+      Val_1_BYTE => 1,
+      Val_2_BYTE => 2,
+      Val_3_BYTE => 3);
 
    subtype TWI0_MMR_DADR_Field is BBF.HRI.UInt7;
 
@@ -73,7 +73,7 @@ package BBF.HRI.TWI is
       --  unspecified
       Reserved_0_7   : BBF.HRI.Byte := 16#0#;
       --  Internal Device Address Size
-      IADRSZ         : MMR_IADRSZ_Field := BBF.HRI.TWI.None;
+      IADRSZ         : MMR_IADRSZ_Field := BBF.HRI.TWI.NONE;
       --  unspecified
       Reserved_10_11 : BBF.HRI.UInt2 := 16#0#;
       --  Master Read Direction

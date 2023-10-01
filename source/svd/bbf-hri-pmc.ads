@@ -1,8 +1,8 @@
+pragma Style_Checks (Off);
+
 --  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
-pragma Ada_2012;
-pragma Style_Checks (Off);
 
 with System;
 
@@ -306,30 +306,30 @@ package BBF.HRI.PMC is
    --  Main On-Chip RC Oscillator Frequency Selection
    type CKGR_MOR_MOSCRCF_Field is
      (--  The Fast RC Oscillator Frequency is at 4 MHz (default)
-      Val_4_Mhz,
+      Val_4_MHz,
       --  The Fast RC Oscillator Frequency is at 8 MHz
-      Val_8_Mhz,
+      Val_8_MHz,
       --  The Fast RC Oscillator Frequency is at 12 MHz
-      Val_12_Mhz)
+      Val_12_MHz)
      with Size => 3;
    for CKGR_MOR_MOSCRCF_Field use
-     (Val_4_Mhz => 0,
-      Val_8_Mhz => 1,
-      Val_12_Mhz => 2);
+     (Val_4_MHz => 0,
+      Val_8_MHz => 1,
+      Val_12_MHz => 2);
 
    subtype CKGR_MOR_MOSCXTST_Field is BBF.HRI.Byte;
 
    --  Write Access Password
    type CKGR_MOR_KEY_Field is
      (--  Reset value for the field
-      Ckgr_Mor_Key_Field_Reset,
+      CKGR_MOR_KEY_Field_Reset,
       --  Writing any other value in this field aborts the write operation.Always
 --  reads as 0.
-      Passwd)
+      PASSWD)
      with Size => 8;
    for CKGR_MOR_KEY_Field use
-     (Ckgr_Mor_Key_Field_Reset => 0,
-      Passwd => 55);
+     (CKGR_MOR_KEY_Field_Reset => 0,
+      PASSWD => 55);
 
    --  Main Oscillator Register
    type CKGR_MOR_Register is record
@@ -342,13 +342,13 @@ package BBF.HRI.PMC is
       --  Main On-Chip RC Oscillator Enable
       MOSCRCEN       : Boolean := True;
       --  Main On-Chip RC Oscillator Frequency Selection
-      MOSCRCF        : CKGR_MOR_MOSCRCF_Field := BBF.HRI.PMC.Val_4_Mhz;
+      MOSCRCF        : CKGR_MOR_MOSCRCF_Field := BBF.HRI.PMC.Val_4_MHz;
       --  unspecified
       Reserved_7_7   : BBF.HRI.Bit := 16#0#;
       --  Main Crystal Oscillator Start-up Time
       MOSCXTST       : CKGR_MOR_MOSCXTST_Field := 16#0#;
       --  Write Access Password
-      KEY            : CKGR_MOR_KEY_Field := Ckgr_Mor_Key_Field_Reset;
+      KEY            : CKGR_MOR_KEY_Field := CKGR_MOR_KEY_Field_Reset;
       --  Main Oscillator Selection
       MOSCSEL        : Boolean := False;
       --  Clock Failure Detector Enable
@@ -430,57 +430,57 @@ package BBF.HRI.PMC is
    --  Master Clock Source Selection
    type PMC_MCKR_CSS_Field is
      (--  Slow Clock is selected
-      Slow_Clk,
+      SLOW_CLK,
       --  Main Clock is selected
-      Main_Clk,
+      MAIN_CLK,
       --  PLLA Clock is selected
-      Plla_Clk,
+      PLLA_CLK,
       --  UPLL Clock is selected
-      Upll_Clk)
+      UPLL_CLK)
      with Size => 2;
    for PMC_MCKR_CSS_Field use
-     (Slow_Clk => 0,
-      Main_Clk => 1,
-      Plla_Clk => 2,
-      Upll_Clk => 3);
+     (SLOW_CLK => 0,
+      MAIN_CLK => 1,
+      PLLA_CLK => 2,
+      UPLL_CLK => 3);
 
    --  Processor Clock Prescaler
    type PMC_MCKR_PRES_Field is
      (--  Selected clock
-      Clk_1,
+      CLK_1,
       --  Selected clock divided by 2
-      Clk_2,
+      CLK_2,
       --  Selected clock divided by 4
-      Clk_4,
+      CLK_4,
       --  Selected clock divided by 8
-      Clk_8,
+      CLK_8,
       --  Selected clock divided by 16
-      Clk_16,
+      CLK_16,
       --  Selected clock divided by 32
-      Clk_32,
+      CLK_32,
       --  Selected clock divided by 64
-      Clk_64,
+      CLK_64,
       --  Selected clock divided by 3
-      Clk_3)
+      CLK_3)
      with Size => 3;
    for PMC_MCKR_PRES_Field use
-     (Clk_1 => 0,
-      Clk_2 => 1,
-      Clk_4 => 2,
-      Clk_8 => 3,
-      Clk_16 => 4,
-      Clk_32 => 5,
-      Clk_64 => 6,
-      Clk_3 => 7);
+     (CLK_1 => 0,
+      CLK_2 => 1,
+      CLK_4 => 2,
+      CLK_8 => 3,
+      CLK_16 => 4,
+      CLK_32 => 5,
+      CLK_64 => 6,
+      CLK_3 => 7);
 
    --  Master Clock Register
    type PMC_MCKR_Register is record
       --  Master Clock Source Selection
-      CSS            : PMC_MCKR_CSS_Field := BBF.HRI.PMC.Main_Clk;
+      CSS            : PMC_MCKR_CSS_Field := BBF.HRI.PMC.MAIN_CLK;
       --  unspecified
       Reserved_2_3   : BBF.HRI.UInt2 := 16#0#;
       --  Processor Clock Prescaler
-      PRES           : PMC_MCKR_PRES_Field := BBF.HRI.PMC.Clk_1;
+      PRES           : PMC_MCKR_PRES_Field := BBF.HRI.PMC.CLK_1;
       --  unspecified
       Reserved_7_11  : BBF.HRI.UInt5 := 16#0#;
       --  PLLA Divisor by 2
@@ -528,57 +528,57 @@ package BBF.HRI.PMC is
    --  Master Clock Source Selection
    type PMC_PCK_CSS_Field is
      (--  Slow Clock is selected
-      Slow_Clk,
+      SLOW_CLK,
       --  Main Clock is selected
-      Main_Clk,
+      MAIN_CLK,
       --  PLLA Clock is selected
-      Plla_Clk,
+      PLLA_CLK,
       --  UPLL Clock is selected
-      Upll_Clk,
+      UPLL_CLK,
       --  Master Clock is selected
-      Mck)
+      MCK)
      with Size => 3;
    for PMC_PCK_CSS_Field use
-     (Slow_Clk => 0,
-      Main_Clk => 1,
-      Plla_Clk => 2,
-      Upll_Clk => 3,
-      Mck => 4);
+     (SLOW_CLK => 0,
+      MAIN_CLK => 1,
+      PLLA_CLK => 2,
+      UPLL_CLK => 3,
+      MCK => 4);
 
    --  Programmable Clock Prescaler
    type PMC_PCK_PRES_Field is
      (--  Selected clock
-      Clk_1,
+      CLK_1,
       --  Selected clock divided by 2
-      Clk_2,
+      CLK_2,
       --  Selected clock divided by 4
-      Clk_4,
+      CLK_4,
       --  Selected clock divided by 8
-      Clk_8,
+      CLK_8,
       --  Selected clock divided by 16
-      Clk_16,
+      CLK_16,
       --  Selected clock divided by 32
-      Clk_32,
+      CLK_32,
       --  Selected clock divided by 64
-      Clk_64)
+      CLK_64)
      with Size => 3;
    for PMC_PCK_PRES_Field use
-     (Clk_1 => 0,
-      Clk_2 => 1,
-      Clk_4 => 2,
-      Clk_8 => 3,
-      Clk_16 => 4,
-      Clk_32 => 5,
-      Clk_64 => 6);
+     (CLK_1 => 0,
+      CLK_2 => 1,
+      CLK_4 => 2,
+      CLK_8 => 3,
+      CLK_16 => 4,
+      CLK_32 => 5,
+      CLK_64 => 6);
 
    --  Programmable Clock 0 Register
    type PMC_PCK_Register is record
       --  Master Clock Source Selection
-      CSS           : PMC_PCK_CSS_Field := BBF.HRI.PMC.Slow_Clk;
+      CSS           : PMC_PCK_CSS_Field := BBF.HRI.PMC.SLOW_CLK;
       --  unspecified
       Reserved_3_3  : BBF.HRI.Bit := 16#0#;
       --  Programmable Clock Prescaler
-      PRES          : PMC_PCK_PRES_Field := BBF.HRI.PMC.Clk_1;
+      PRES          : PMC_PCK_PRES_Field := BBF.HRI.PMC.CLK_1;
       --  unspecified
       Reserved_7_31 : BBF.HRI.UInt25 := 16#0#;
    end record
@@ -1004,14 +1004,14 @@ package BBF.HRI.PMC is
    --  Write Protect KEY
    type PMC_WPMR_WPKEY_Field is
      (--  Reset value for the field
-      Pmc_Wpmr_Wpkey_Field_Reset,
+      PMC_WPMR_WPKEY_Field_Reset,
       --  Writing any other value in this field aborts the write operation of the
 --  WPEN bit. Always reads as 0.
-      Passwd)
+      PASSWD)
      with Size => 24;
    for PMC_WPMR_WPKEY_Field use
-     (Pmc_Wpmr_Wpkey_Field_Reset => 0,
-      Passwd => 5262659);
+     (PMC_WPMR_WPKEY_Field_Reset => 0,
+      PASSWD => 5262659);
 
    --  Write Protect Mode Register
    type PMC_WPMR_Register is record
@@ -1020,7 +1020,7 @@ package BBF.HRI.PMC is
       --  unspecified
       Reserved_1_7 : BBF.HRI.UInt7 := 16#0#;
       --  Write Protect KEY
-      WPKEY        : PMC_WPMR_WPKEY_Field := Pmc_Wpmr_Wpkey_Field_Reset;
+      WPKEY        : PMC_WPMR_WPKEY_Field := PMC_WPMR_WPKEY_Field_Reset;
    end record
      with Volatile_Full_Access, Object_Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1178,16 +1178,16 @@ package BBF.HRI.PMC is
    --  Divisor Value
    type PMC_PCR_DIV_Field is
      (--  Peripheral clock is MCK
-      Periph_Div_Mck,
+      PERIPH_DIV_MCK,
       --  Peripheral clock is MCK/2
-      Periph_Div2_Mck,
+      PERIPH_DIV2_MCK,
       --  Peripheral clock is MCK/4
-      Periph_Div4_Mck)
+      PERIPH_DIV4_MCK)
      with Size => 2;
    for PMC_PCR_DIV_Field use
-     (Periph_Div_Mck => 0,
-      Periph_Div2_Mck => 1,
-      Periph_Div4_Mck => 2);
+     (PERIPH_DIV_MCK => 0,
+      PERIPH_DIV2_MCK => 1,
+      PERIPH_DIV4_MCK => 2);
 
    --  Peripheral Control Register
    type PMC_PCR_Register is record
@@ -1200,7 +1200,7 @@ package BBF.HRI.PMC is
       --  unspecified
       Reserved_13_15 : BBF.HRI.UInt3 := 16#0#;
       --  Divisor Value
-      DIV            : PMC_PCR_DIV_Field := BBF.HRI.PMC.Periph_Div_Mck;
+      DIV            : PMC_PCR_DIV_Field := BBF.HRI.PMC.PERIPH_DIV_MCK;
       --  unspecified
       Reserved_18_27 : BBF.HRI.UInt10 := 16#0#;
       --  Enable

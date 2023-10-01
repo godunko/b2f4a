@@ -1,8 +1,8 @@
+pragma Style_Checks (Off);
+
 --  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
-pragma Ada_2012;
-pragma Style_Checks (Off);
 
 with System;
 
@@ -17,13 +17,13 @@ package BBF.HRI.SYST is
    --  no description available
    type CTRL_CLKSOURCE_Field is
      (--  MCK/8
-      Mck_8,
+      MCK_8,
       --  MCK
-      Mck)
+      MCK)
      with Size => 1;
    for CTRL_CLKSOURCE_Field use
-     (Mck_8 => 0,
-      Mck => 1);
+     (MCK_8 => 0,
+      MCK => 1);
 
    --  SYST_CTRL_RESERVED array
    type SYST_CTRL_RESERVED_Field_Array is array (1 .. 13) of Boolean
@@ -80,7 +80,7 @@ package BBF.HRI.SYST is
       --  no description available
       TICKINT    : Boolean := False;
       --  no description available
-      CLKSOURCE  : CTRL_CLKSOURCE_Field := BBF.HRI.SYST.Mck;
+      CLKSOURCE  : CTRL_CLKSOURCE_Field := BBF.HRI.SYST.MCK;
       --  Read-only. no description available
       RESERVED   : SYST_CTRL_RESERVED_Field :=
                     (As_Array => False, Val => 16#0#);

@@ -1,8 +1,8 @@
+pragma Style_Checks (Off);
+
 --  This spec has been automatically generated from ATSAM3X8E.svd
 
 pragma Restrictions (No_Elaboration_Code);
-pragma Ada_2012;
-pragma Style_Checks (Off);
 
 with System;
 
@@ -53,50 +53,50 @@ package BBF.HRI.UART is
    --  Parity Type
    type MR_PAR_Field is
      (--  Even Parity
-      Even,
+      EVEN,
       --  Odd Parity
-      Odd,
+      ODD,
       --  Space: parity forced to 0
-      Space,
+      SPACE,
       --  Mark: parity forced to 1
-      Mark,
+      MARK,
       --  No Parity
-      No)
+      NO)
      with Size => 3;
    for MR_PAR_Field use
-     (Even => 0,
-      Odd => 1,
-      Space => 2,
-      Mark => 3,
-      No => 4);
+     (EVEN => 0,
+      ODD => 1,
+      SPACE => 2,
+      MARK => 3,
+      NO => 4);
 
    --  Channel Mode
    type MR_CHMODE_Field is
      (--  Normal Mode
-      Normal,
+      NORMAL,
       --  Automatic Echo
-      Automatic,
+      AUTOMATIC,
       --  Local Loopback
-      Local_Loopback,
+      LOCAL_LOOPBACK,
       --  Remote Loopback
-      Remote_Loopback)
+      REMOTE_LOOPBACK)
      with Size => 2;
    for MR_CHMODE_Field use
-     (Normal => 0,
-      Automatic => 1,
-      Local_Loopback => 2,
-      Remote_Loopback => 3);
+     (NORMAL => 0,
+      AUTOMATIC => 1,
+      LOCAL_LOOPBACK => 2,
+      REMOTE_LOOPBACK => 3);
 
    --  Mode Register
    type UART_MR_Register is record
       --  unspecified
       Reserved_0_8   : BBF.HRI.UInt9 := 16#0#;
       --  Parity Type
-      PAR            : MR_PAR_Field := BBF.HRI.UART.Even;
+      PAR            : MR_PAR_Field := BBF.HRI.UART.EVEN;
       --  unspecified
       Reserved_12_13 : BBF.HRI.UInt2 := 16#0#;
       --  Channel Mode
-      CHMODE         : MR_CHMODE_Field := BBF.HRI.UART.Normal;
+      CHMODE         : MR_CHMODE_Field := BBF.HRI.UART.NORMAL;
       --  unspecified
       Reserved_16_31 : BBF.HRI.UInt16 := 16#0#;
    end record
