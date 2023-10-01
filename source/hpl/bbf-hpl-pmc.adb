@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,6 +39,7 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 with Ada.Unchecked_Conversion;
 
 with BBF.HRI.PMC;
@@ -49,11 +50,11 @@ package body BBF.HPL.PMC is
    -- Enable_Peripheral_Clock --
    -----------------------------
 
-   procedure Enable_Peripheral_Clock (Id : Peripheral_Identifier) is
+   procedure Enable_Peripheral_Clock (Id : BBF.HPL.Peripheral_Identifier) is
 
       function To_Unsigned_8 is
         new Ada.Unchecked_Conversion
-              (Peripheral_Identifier, Interfaces.Unsigned_8);
+              (BBF.HPL.Peripheral_Identifier, Interfaces.Unsigned_8);
 
       Aux : constant Integer := Integer (To_Unsigned_8 (Id));
 
