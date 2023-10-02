@@ -2,13 +2,13 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Hardware Proxy Layer                           --
+--                           Board Support Layer                            --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2023, Vadim Godunko <vgodunko@gmail.com>                     --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -40,120 +40,48 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-package body BBF.HPL.UART is
+with BBF.HPL.NVIC;
+with BBF.HPL.PMC;
+
+package body BBF.BSL.UART is
+
+   CHIP_FREQ_CPU_MAX : constant := 84_000_000;
+   --  XXX Should be computed based on current settings of the chip
+
+   UART_RX : constant := 8;
+   UART_TX : constant := 9;
 
    ----------------
    -- Initialize --
    ----------------
 
-   procedure Initialize
-     (Base                   : UART;
-      Master_Clock_Frequency : Interfaces.Unsigned_32;
-      Baud_Rate              : Interfaces.Unsigned_32)
-   is
-      use type Interfaces.Unsigned_32;
-
-      Clock_Divisor : constant Interfaces.Unsigned_32 :=
-        Master_Clock_Frequency / Baud_Rate / 16;
-      --  Computed clock divisor for Baud Rate Generator Register.
-      --  Value 16 is UART internal div factor for sampling
-
+   overriding procedure Initialize (Self : in out SAM3_UART_Controller) is
    begin
-      --  Reset and disable receiver and transmitter
+      --  Enable peripheral clock
 
-      Base.CR :=
-        (RSTRX | RSTTX => True,
-         RXDIS | TXDIS => True,
-         others        => <>);
+      BBF.HPL.PMC.Enable_Peripheral_Clock (Self.Peripheral);
 
-      --  Configure baudrate
+      --  Configure PIO function
 
-      if Clock_Divisor not in 1 .. 65_535 then
-         raise Program_Error;
-      end if;
+      Self.TX.Set_Peripheral (Self.TX_Function);
 
-      Base.BRGR.CD := BBF.HRI.UInt16 (Clock_Divisor);
+      --  Configure UART.
 
-      --  Configure mode
+      BBF.HPL.UART.Initialize (Self.Controller, CHIP_FREQ_CPU_MAX, 115_200);
 
-      Base.MR :=
-        (PAR    => BBF.HRI.UART.Even,
-         --  XXX: Parity mode should be configurable.
-         CHMODE => BBF.HRI.UART.Normal,
-         others => <>);
+      --  Enable data transfer
+      --  XXX Should UART/PDC are reset first?
 
-      --  Disable PDC channel
+      BBF.HPL.UART.Enable_Receive_Buffer (Self.Controller);
+      BBF.HPL.UART.Enable_Transmit_Buffer (Self.Controller);
 
-      Base.PTCR := (RXTDIS | TXTDIS => True, others => <>);
+      --  Enable interrupts
 
-      --  Enable receiver and transmitter
-
-      Base.CR :=
-        (RXEN | TXEN => True,
-         others      => <>);
+      BBF.HPL.UART.Enable_Interrupt
+        (Self.Controller, BBF.HPL.UART.Receive_Ready);
+      BBF.HPL.NVIC.Enable_Interrupt (Self.Peripheral);
+      --  XXX Clear pending exception before enabilg of interrupts is
+      --  recommended.
    end Initialize;
 
-   -----------------------
-   -- Is_Receiver_Ready --
-   -----------------------
-
-   function Is_Receiver_Ready (Base : UART) return Boolean is
-   begin
-      return Base.SR.RXRDY;
-   end Is_Receiver_Ready;
-
-   --------------------------
-   -- Is_Transmitter_Ready --
-   --------------------------
-
-   function Is_Transmitter_Ready (Base : UART) return Boolean is
-   begin
-      return Base.SR.TXRDY;
-   end Is_Transmitter_Ready;
-
-   ----------
-   -- Read --
-   ----------
-
-   procedure Read
-     (Base    : UART;
-      Data    : out Interfaces.Unsigned_8;
-      Success : out Boolean) is
-   begin
-      if not Is_Receiver_Ready (Base) then
-         Success := False;
-
-      else
-         Data := Interfaces.Unsigned_8 (Base.RHR.RXCHR);
-         Success := True;
-      end if;
-   end Read;
-
-   -----------
-   -- UART0 --
-   -----------
-
-   function UART0 return UART is
-   begin
-      return BBF.HRI.UART.UART_Periph'Access;
-   end UART0;
-
-   -----------
-   -- Write --
-   -----------
-
-   procedure Write
-     (Base    : UART;
-      Data    : Interfaces.Unsigned_8;
-      Success : out Boolean) is
-   begin
-      if not Is_Transmitter_Ready (Base) then
-         Success := False;
-
-      else
-         Base.THR.TXCHR := BBF.HRI.Byte (Data);
-         Success := True;
-      end if;
-   end Write;
-
-end BBF.HPL.UART;
+end BBF.BSL.UART;

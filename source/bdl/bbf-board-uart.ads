@@ -2,13 +2,13 @@
 --                                                                          --
 --                       Bare-Board Framework for Ada                       --
 --                                                                          --
---                           Hardware Proxy Layer                           --
+--                         Board Description Layer                          --
 --                                                                          --
 --                        Runtime Library Component                         --
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2023, Vadim Godunko <vgodunko@gmail.com>                     --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,53 +39,31 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
---  Universal Asynchronous Receiver Transceiver (UART)
 
-pragma Restrictions (No_Elaboration_Code);
+--  UART interface for Arduino Due/X board.
 
-with Interfaces;
-
+private with BBF.BSL.UART;
+private with BBF.HPL.PIO;
 private with BBF.HRI.UART;
+with BBF.UART;
 
-package BBF.HPL.UART is
+package BBF.Board.UART is
 
    pragma Preelaborate;
 
-   type UART is private;
-
-   function UART0 return UART;
-
-   procedure Initialize
-     (Base                   : UART;
-      Master_Clock_Frequency : Interfaces.Unsigned_32;
-      Baud_Rate              : Interfaces.Unsigned_32);
-   --  Configure UART with the specified parameters.
-   --
-   --  Note: The PMC and PIOs must be configured first.
-
-   function Is_Transmitter_Ready (Base : UART) return Boolean;
-   --  Check if data has been loaded in UART_THR and is waiting to be loaded in
-   --  the Transmit Shift Register (TSR).
-
-   function Is_Receiver_Ready (Base : UART) return Boolean;
-   --  Check if data has been received and loaded in UART_RHR.
-
-   procedure Write
-     (Base    : UART;
-      Data    : Interfaces.Unsigned_8;
-      Success : out Boolean);
-   --  Write to UART Transmit Holding Register. Before writing user should
-   --  check if transmitter is ready (or empty).
-
-   procedure Read
-     (Base    : UART;
-      Data    : out Interfaces.Unsigned_8;
-      Success : out Boolean);
-   --  Read from UART Receive Holding Register. Before reading user should
-   --  check if receiver is ready.
+   UART : constant not null access BBF.UART.UART_Controller'Class;
 
 private
 
-   type UART is access all BBF.HRI.UART.UART_Peripheral;
+   UART_Controller : aliased BBF.BSL.UART.SAM3_UART_Controller
+     (Controller  => BBF.HRI.UART.UART_Periph'Access,
+      Peripheral  => BBF.HPL.Universal_Asynchronous_Receiver_Transceiver,
+      RX          => PA08_URXD_Pin'Access,
+      RX_Function => BBF.HPL.PIO.A,
+      TX          => PA09_UTXD_Pin'Access,
+      TX_Function => BBF.HPL.PIO.A);
 
-end BBF.HPL.UART;
+   UART : constant not null access BBF.UART.UART_Controller'Class :=
+     UART_Controller'Access;
+
+end BBF.Board.UART;

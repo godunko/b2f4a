@@ -59,6 +59,8 @@ package BBF.Board is
    Pin_SCL1   : constant not null access BBF.GPIO.Pin'Class;
    Pin_SDA1   : constant not null access BBF.GPIO.Pin'Class;
 
+   Pin_0_RX0  : constant not null access BBF.GPIO.Pin'Class;
+   Pin_1_TD0  : constant not null access BBF.GPIO.Pin'Class;
    Pin_13_LED : constant not null access BBF.GPIO.Pin'Class;
    Pin_20_SDA : constant not null access BBF.GPIO.Pin'Class;
    Pin_21_SCL : constant not null access BBF.GPIO.Pin'Class;
@@ -77,6 +79,12 @@ package BBF.Board is
 
 private
 
+   PA08_URXD_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
+         Pin        => 8);
+   PA09_UTXD_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
+         Pin        => 9);
    PA17_TWD0_Pin  : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
      := (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
          Pin        => 17);
@@ -110,6 +118,11 @@ private
      := PA18_TWCK0_Pin'Access;
    Pin_SDA1   : constant not null access BBF.GPIO.Pin'Class
      := PA17_TWD0_Pin'Access;
+
+   Pin_0_RX0  : constant not null access BBF.GPIO.Pin'Class
+     := PA08_URXD_Pin'Access;
+   Pin_1_TD0  : constant not null access BBF.GPIO.Pin'Class
+     := PA09_UTXD_Pin'Access;
 
    Pin_13_LED : constant not null access BBF.GPIO.Pin'Class
      := PB27_Pin'Access;
