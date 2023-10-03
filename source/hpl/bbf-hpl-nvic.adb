@@ -43,21 +43,8 @@
 pragma Restrictions (No_Elaboration_Code);
 
 with Ada.Unchecked_Conversion;
-with System.Machine_Code;
 
 package body BBF.HPL.NVIC is
-
-   ------------------------
-   -- Disable_Interrupts --
-   ------------------------
-
-   procedure Disable_Interrupts is
-   begin
-      System.Machine_Code.Asm
-        (Template => "cpsid i",
-         Clobber  => "memory",
-         Volatile => True);
-   end Disable_Interrupts;
 
    ----------------------
    -- Enable_Interrupt --
@@ -79,17 +66,5 @@ package body BBF.HPL.NVIC is
          BBF.HRI.NVIC.NVIC_Periph.ISER1 := 2 ** (Aux mod 32);
       end if;
    end Enable_Interrupt;
-
-   -----------------------
-   -- Enable_Interrupts --
-   -----------------------
-
-   procedure Enable_Interrupts is
-   begin
-      System.Machine_Code.Asm
-        (Template => "cpsie i",
-         Clobber  => "memory",
-         Volatile => True);
-   end Enable_Interrupts;
 
 end BBF.HPL.NVIC;

@@ -134,4 +134,12 @@ package BBF.HPL is
       CAN_Controller_0                                          => 43,
       CAN_Controller_1                                          => 44);
 
+   procedure Disable_Interrupts with Inline;
+   --  Disable handling of the interrupts by the CPU. Can be used in privileged
+   --  mode only.
+
+   procedure Enable_Interrupts with Inline;
+   --  Enable handling of the interrupts by the CPU. Can be used in privileged
+   --  mode only.
+
 end BBF.HPL;

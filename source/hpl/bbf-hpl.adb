@@ -40,17 +40,34 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---   Nested Vectored Interrupt Controller (NVIC) API
-
 pragma Restrictions (No_Elaboration_Code);
 
-with BBF.HRI.NVIC;
+with System.Machine_Code;
 
-package BBF.HPL.NVIC is
+package body BBF.HPL is
 
-   pragma Preelaborate;
+   ------------------------
+   -- Disable_Interrupts --
+   ------------------------
 
-   procedure Enable_Interrupt (Id : BBF.HPL.Peripheral_Identifier);
-   --  Enable given interrupt.
+   procedure Disable_Interrupts is
+   begin
+      System.Machine_Code.Asm
+        (Template => "cpsid i",
+         Clobber  => "memory",
+         Volatile => True);
+   end Disable_Interrupts;
 
-end BBF.HPL.NVIC;
+   -----------------------
+   -- Enable_Interrupts --
+   -----------------------
+
+   procedure Enable_Interrupts is
+   begin
+      System.Machine_Code.Asm
+        (Template => "cpsie i",
+         Clobber  => "memory",
+         Volatile => True);
+   end Enable_Interrupts;
+
+end BBF.HPL;
