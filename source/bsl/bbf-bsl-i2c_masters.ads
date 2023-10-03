@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,6 +39,7 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 --  I2C Bus Master on top of TWI controller
 
 with Interfaces;
@@ -51,12 +52,13 @@ with BBF.I2C.Master;
 package BBF.BSL.I2C_Masters is
 
    type SAM3_I2C_Master_Controller
-    (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
-     SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
-     SCL_Function : BBF.HPL.PIO.Peripheral_Function;
-     SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
-     SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
-       limited new BBF.I2C.Master.I2C_Master_Controller with null record;
+     (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
+      Peripheral   : BBF.HPL.Peripheral_Identifier;
+      SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SCL_Function : BBF.HPL.PIO.Peripheral_Function;
+      SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
+        limited new BBF.I2C.Master.I2C_Master_Controller with null record;
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
 

@@ -52,8 +52,7 @@ package body BBF.BSL.I2C_Masters is
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller) is
    begin
-      BBF.HPL.PMC.Enable_Peripheral_Clock (BBF.HPL.PMC.Two_Wire_Interface_0);
-      --  XXX Another ID must be used for TWI1 controller
+      BBF.HPL.PMC.Enable_Peripheral_Clock (Self.Peripheral);
       Self.SCL.Set_Peripheral (Self.SCL_Function);
       Self.SDA.Set_Peripheral (Self.SDA_Function);
       BBF.HPL.TWI.Initialize_Master
