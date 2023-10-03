@@ -53,4 +53,12 @@ package BBF.HPL.NVIC is
    procedure Enable_Interrupt (Id : BBF.HPL.Peripheral_Identifier);
    --  Enable given interrupt.
 
+   procedure Disable_Interrupts with Inline;
+   --  Disable handling of the interrupts by the CPU. Can be used in privileged
+   --  mode only.
+
+   procedure Enable_Interrupts with Inline;
+   --  Enable handling of the interrupts by the CPU. Can be used in privileged
+   --  mode only.
+
 end BBF.HPL.NVIC;
