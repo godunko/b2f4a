@@ -44,6 +44,47 @@ with System.Storage_Elements;
 
 package body BBF.HPL.UART is
 
+   -----------------------
+   -- Disable_Interrupt --
+   -----------------------
+
+   procedure Disable_Interrupt
+     (Base      : UART;
+      Interrupt : UART_Interrupt_Kind) is
+   begin
+      case Interrupt is
+         when Receive_Ready =>
+            Base.IDR := (RXRDY => True, others => <>);
+
+         when Transmit_Ready =>
+            Base.IDR := (TXRDY => True, others => <>);
+
+         when End_Of_Receive_Transfer =>
+            Base.IDR := (ENDRX => True, others => <>);
+
+         when End_Of_Transmit_Transfer =>
+            Base.IDR := (ENDTX => True, others => <>);
+
+         when Overrun_Error =>
+            Base.IDR := (OVRE => True, others => <>);
+
+         when Framing_Error =>
+            Base.IDR := (FRAME => True, others => <>);
+
+         when Parity_Error =>
+            Base.IDR := (PARE => True, others => <>);
+
+         when Transmit_Empty =>
+            Base.IDR := (TXEMPTY => True, others => <>);
+
+         when Transmission_Buffer_Empty =>
+            Base.IDR := (TXBUFE => True, others => <>);
+
+         when Receive_Buffer_Full =>
+            Base.IDR := (RXBUFF => True, others => <>);
+      end case;
+   end Disable_Interrupt;
+
    ----------------------
    -- Enable_Interrupt --
    ----------------------
@@ -77,10 +118,10 @@ package body BBF.HPL.UART is
          when Transmit_Empty =>
             Base.IER := (TXEMPTY => True, others => <>);
 
-         when Buffer_Empty =>
+         when Transmission_Buffer_Empty =>
             Base.IER := (TXBUFE => True, others => <>);
 
-         when Buffer_Full =>
+         when Receive_Buffer_Full =>
             Base.IER := (RXBUFF => True, others => <>);
       end case;
    end Enable_Interrupt;
@@ -94,14 +135,14 @@ package body BBF.HPL.UART is
       BBF.HRI.UART.UART_Periph.PTCR := (RXTEN => True, others => <>);
    end Enable_Receive_Buffer;
 
-   ----------------------------
-   -- Enable_Transmit_Buffer --
-   ----------------------------
+   --------------------------------
+   -- Enable_Transmission_Buffer --
+   --------------------------------
 
-   procedure Enable_Transmit_Buffer (Base : UART) is
+   procedure Enable_Transmission_Buffer (Base : UART) is
    begin
       BBF.HRI.UART.UART_Periph.PTCR := (TXTEN => True, others => <>);
-   end Enable_Transmit_Buffer;
+   end Enable_Transmission_Buffer;
 
    ----------------
    -- Initialize --
@@ -172,6 +213,15 @@ package body BBF.HPL.UART is
       return Base.SR.TXRDY;
    end Is_Transmitter_Ready;
 
+   ----------------------------------
+   -- Is_Transmission_Buffer_Empty --
+   ----------------------------------
+
+   function Is_Transmission_Buffer_Empty (Base : UART) return Boolean is
+   begin
+      return Base.SR.TXBUFE;
+   end Is_Transmission_Buffer_Empty;
+
    ----------
    -- Read --
    ----------
@@ -205,11 +255,11 @@ package body BBF.HPL.UART is
         (RXCTR => BBF.HRI.UInt16 (Length), others => <>);
    end Set_Receive_Buffer;
 
-   -------------------------
-   -- Set_Transmit_Buffer --
-   -------------------------
+   -----------------------------
+   -- Set_Transmission_Buffer --
+   -----------------------------
 
-   procedure Set_Transmit_Buffer
+   procedure Set_Transmission_Buffer
      (Base   : UART;
       Buffer : System.Address;
       Length : Interfaces.Unsigned_16) is
@@ -218,8 +268,28 @@ package body BBF.HPL.UART is
         BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Buffer));
       BBF.HRI.UART.UART_Periph.TCR :=
         (TXCTR => BBF.HRI.UInt16 (Length), others => <>);
-   end Set_Transmit_Buffer;
+   end Set_Transmission_Buffer;
 
+   -----------------------------
+   -- Set_Transmission_Buffer --
+   -----------------------------
+
+   procedure Set_Transmission_Buffer
+     (Base        : UART;
+      Buffer      : System.Address;
+      Length      : Interfaces.Unsigned_16;
+      Next_Buffer : System.Address;
+      Next_Length : Interfaces.Unsigned_16) is
+   begin
+      BBF.HRI.UART.UART_Periph.TPR :=
+        BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Buffer));
+      BBF.HRI.UART.UART_Periph.TCR :=
+        (TXCTR => BBF.HRI.UInt16 (Length), others => <>);
+      BBF.HRI.UART.UART_Periph.TNPR :=
+        BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Next_Buffer));
+      BBF.HRI.UART.UART_Periph.TNCR :=
+        (TXNCTR => BBF.HRI.UInt16 (Next_Length), others => <>);
+   end Set_Transmission_Buffer;
    -----------
    -- UART0 --
    -----------

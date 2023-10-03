@@ -61,8 +61,8 @@ package BBF.HPL.UART is
       Framing_Error,
       Parity_Error,
       Transmit_Empty,
-      Buffer_Empty,
-      Buffer_Full);
+      Transmission_Buffer_Empty,
+      Receive_Buffer_Full);
 
    type UART is access all BBF.HRI.UART.UART_Peripheral;
 
@@ -76,12 +76,17 @@ package BBF.HPL.UART is
    --
    --  Note: The PMC and PIOs must be configured first.
 
-   function Is_Transmitter_Ready (Base : UART) return Boolean;
+   function Is_Transmitter_Ready (Base : UART) return Boolean with Inline;
    --  Check if data has been loaded in UART_THR and is waiting to be loaded in
    --  the Transmit Shift Register (TSR).
 
-   function Is_Receiver_Ready (Base : UART) return Boolean;
+   function Is_Receiver_Ready (Base : UART) return Boolean with Inline;
    --  Check if data has been received and loaded in UART_RHR.
+
+   function Is_Transmission_Buffer_Empty (Base : UART) return Boolean
+     with Inline;
+   --  Checks if transmiter buffer is empty (both current and next chunks has
+   --  been processed).
 
    procedure Write
      (Base    : UART;
@@ -102,22 +107,35 @@ package BBF.HPL.UART is
       Interrupt : UART_Interrupt_Kind) with Inline;
    --  Enable given interrupt
 
+   procedure Disable_Interrupt
+     (Base      : UART;
+      Interrupt : UART_Interrupt_Kind) with Inline;
+   --  Disable given interrupt
+
    procedure Set_Receive_Buffer
      (Base   : UART;
       Buffer : System.Address;
       Length : Interfaces.Unsigned_16) with Inline;
    --  Set buffer to receive data.
 
-   procedure Set_Transmit_Buffer
+   procedure Set_Transmission_Buffer
      (Base   : UART;
       Buffer : System.Address;
       Length : Interfaces.Unsigned_16) with Inline;
    --  Set buffer to transmit data.
 
+   procedure Set_Transmission_Buffer
+     (Base        : UART;
+      Buffer      : System.Address;
+      Length      : Interfaces.Unsigned_16;
+      Next_Buffer : System.Address;
+      Next_Length : Interfaces.Unsigned_16) with Inline;
+   --  Set two buffers to transmit data.
+
    procedure Enable_Receive_Buffer (Base : UART) with Inline;
    --  Enable use of receive buffer.
 
-   procedure Enable_Transmit_Buffer (Base : UART) with Inline;
+   procedure Enable_Transmission_Buffer (Base : UART) with Inline;
    --  Enable use of transmit buffer.
 
 end BBF.HPL.UART;

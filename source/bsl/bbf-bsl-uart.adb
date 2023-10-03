@@ -73,7 +73,7 @@ package body BBF.BSL.UART is
       --  XXX Should UART/PDC are reset first?
 
       BBF.HPL.UART.Enable_Receive_Buffer (Self.Controller);
-      BBF.HPL.UART.Enable_Transmit_Buffer (Self.Controller);
+      BBF.HPL.UART.Enable_Transmission_Buffer (Self.Controller);
 
       --  Enable interrupts
 
