@@ -6,7 +6,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -43,8 +43,10 @@ package body BBF.Drivers.PCA9685 is
    OSC_CLOCK : constant := 25_000_000;
    --  Internal oscillator frequency.
 
-   MODE1_Address     : constant BBF.I2C.Internal_Address_8 := 16#00#;
-   PRE_SCALE_Address : constant BBF.I2C.Internal_Address_8 := 16#FE#;
+   MODE1_Address         : constant BBF.I2C.Internal_Address_8 := 16#00#;
+   LED0_ON_L_Address     : constant BBF.I2C.Internal_Address_8 := 16#06#;
+   ALL_LED_OFF_H_Address : constant BBF.I2C.Internal_Address_8 := 16#FD#;
+   PRE_SCALE_Address     : constant BBF.I2C.Internal_Address_8 := 16#FE#;
 
    type MODE1_Register is record
       ALLCALL : Boolean := True;
@@ -98,9 +100,99 @@ package body BBF.Drivers.PCA9685 is
       MODE2 : MODE2_Register;
    end record;
 
+   type LEDXX_Register is record
+      LED_ON_L  : Interfaces.Unsigned_8;
+      LED_ON_H  : Interfaces.Unsigned_8;
+      LED_OFF_L : Interfaces.Unsigned_8;
+      LED_OFF_H : Interfaces.Unsigned_8;
+   end record;
+   --  XXX H registers may be split into parts: high bits of counter, reset bit
+   --  and reserved bits.
+
    function Device_Address
     (Self : PCA9685_Controller'Class) return BBF.I2C.Device_Address;
    --  Returns device address on I2C bus.
+
+   ---------------
+   -- Configure --
+   ---------------
+
+   procedure Configure
+     (Self      : in out PCA9685_Controller'Class;
+      Frequency : Interfaces.Unsigned_16;
+      Success   : in out Boolean)
+   is
+      use type Interfaces.Unsigned_16;
+
+      Scale       : constant Interfaces.Unsigned_8 :=
+        Interfaces.Unsigned_8
+         (Interfaces.Unsigned_16 (OSC_CLOCK / 4_096) / Frequency - 1);
+
+      MODE        : MODE_Register;
+      MODE_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 2)
+        with Address => MODE'Address;
+
+   begin
+      if not Success or not Self.Initialized then
+         Success := False;
+
+         return;
+      end if;
+
+      --  Configure PCA9685 to be in sleep state. Sleep state is necessary
+      --  to write PRE_SCALE register.
+      --
+      --  XXX Should some parameters be configurable?
+
+      MODE.MODE1 :=
+        (AI      => True,    --  Default: FALSE
+         --  Enable autoincrement to write many registers by single I2C bus
+         --  write operation.
+         EXTCLK  => False,   --  Default: FALSE
+         SLEEP   => True,    --  Default: TRUE
+         RESTART => False,   --  Default: FALSE
+         SUB1    => False,   --  Default: FALSE
+         SUB2    => False,   --  Default: FALSE
+         SUB3    => False,   --  Default: FALSE
+         ALLCALL => False);  --  Default: TRUE
+         --  ALLCALL address is not used, but may conflict with another device
+         --  on I2C bus.
+
+      MODE.MODE2 :=
+        (OUTDRV     => True,    --  Default: TRUE
+         OUTNE      => Off,     --  Default: OFF
+         OCH        => False,   --  Default: FALSE
+         INVRT      => False,   --  Default: FALSE
+         Reserved_5 => False,   --  Default: FALSE
+         Reserved_6 => False,   --  Default: FALSE
+         Reserved_7 => False);  --  Default: FALSE
+
+      Self.Bus.Write_Synchronous
+        (Self.Device_Address, MODE1_Address, MODE_Buffer, Success);
+
+      if not Success then
+         return;
+      end if;
+
+      --  Configure PRE_SCALE register.
+
+      Self.Bus.Write_Synchronous
+       (Self.Device_Address, PRE_SCALE_Address, Scale, Success);
+
+      if not Success then
+         return;
+      end if;
+
+      --  Wakeup controller.
+
+      MODE.MODE1.SLEEP := False;
+      Self.Bus.Write_Synchronous
+        (Self.Device_Address, MODE1_Address, MODE_Buffer (1 .. 1), Success);
+
+      if not Success then
+         return;
+      end if;
+   end Configure;
 
    --------------------
    -- Device_Address --
@@ -119,54 +211,110 @@ package body BBF.Drivers.PCA9685 is
    ----------------
 
    procedure Initialize
-    (Self      : in out PCA9685_Controller'Class;
-     Frequency : Interfaces.Unsigned_16)
-   is
-      use type Interfaces.Unsigned_16;
-
-      Success : Boolean;
-      Scale   : Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8
-         (Interfaces.Unsigned_16 (OSC_CLOCK / 4_096) / Frequency - 1);
-
+     (Self    : in out PCA9685_Controller'Class;
+      Success : in out Boolean) is
    begin
-      Self.Bus.Write_Synchronous
-       (Self.Device_Address, PRE_SCALE_Address, Scale, Success);
+      Self.Initialized := False;
+
+      --  Do controller's probe.
+
+      Success := Self.Bus.Probe (Self.Device_Address);
 
       if not Success then
          return;
       end if;
 
-      --  Configure controller:
-      --   - switch to normal mode
-      --   - enable register auto-increment
-      --   - disable ALLCALL address
-      --   - set totem pole structure of output lines
-      --   - invert output logic state
+      --  Shutdown all channels. It resets RESTART mode too.
+      --
+      --  It is down by setting of bit 4 in ALL_LED_OFF_H register.
+
+      Self.Bus.Write_Synchronous
+        (Self.Device_Address, ALL_LED_OFF_H_Address, 16#10#, Success);
+
+      if not Success then
+         return;
+      end if;
+
+      --  Configure PCA9685 to almost default configuration and push into the
+      --  sleep state. Sleep state is necessary be able to write PRE_SCALE
+      --  register.
+      --
+      --  Difference from the default configuration:
+      --   - AI (autoincrement) is enabled
+      --   - ALLCALL mode is disable
+      --   - PRE_SCALE register is not changed (it will be set by configuration
+      --     procedure)
 
       declare
-         Registers : constant MODE_Register
-           := (MODE1 =>
-                (AI      => True,
-                 SLEEP   => False,
-                 ALLCALL => False,
-                 others  => <>),
-               MODE2 =>
-                (OUTDRV => True,
-                 others => <>));
-         Value    : BBF.I2C.Unsigned_8_Array (1 .. 2)
-           with Import => True,
-                Convention => Ada,
-                Address    => Registers'Address;
+         MODE        : MODE_Register;
+         MODE_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 2)
+           with Address => MODE'Address;
 
       begin
+         MODE.MODE1 :=
+           (AI      => True,    --  Default: FALSE
+            --  Enable autoincrement to write many registers by single I2C bus
+            --  write operation.
+            EXTCLK  => False,   --  Default: FALSE
+            SLEEP   => True,    --  Default: TRUE
+            RESTART => False,   --  Default: FALSE
+            SUB1    => False,   --  Default: FALSE
+            SUB2    => False,   --  Default: FALSE
+            SUB3    => False,   --  Default: FALSE
+            ALLCALL => False);  --  Default: TRUE
+           --  ALLCALL address is not used, but may conflict with another
+           --  device I2C bus.
+
+         MODE.MODE2 :=
+           (OUTDRV     => True,    --  Default: TRUE
+            OUTNE      => Off,     --  Default: OFF
+            OCH        => False,   --  Default: FALSE
+            INVRT      => False,   --  Default: FALSE
+            Reserved_5 => False,   --  Default: FALSE
+            Reserved_6 => False,   --  Default: FALSE
+            Reserved_7 => False);  --  Default: FALSE
+
          Self.Bus.Write_Synchronous
-          (Self.Device_Address, MODE1_Address, Value, Success);
+           (Self.Device_Address, MODE1_Address, MODE_Buffer, Success);
 
          if not Success then
             return;
          end if;
       end;
+
+      Self.Initialized := True;
    end Initialize;
+
+   -------------------
+   -- Set_Something --
+   -------------------
+
+   procedure Set_Something
+     (Self    : in out PCA9685_Controller'Class;
+      Channel : Channel_Identifier;
+      Value   : Value_Type)
+   is
+      use type Interfaces.Unsigned_8;
+
+      Base    : constant Interfaces.Unsigned_8 :=
+        Interfaces.Unsigned_8 (Channel) * 4 + LED0_ON_L_Address;
+      L       : constant Interfaces.Unsigned_8 :=
+        Interfaces.Unsigned_8 (Value mod 256);
+      H       : constant Interfaces.Unsigned_8 :=
+        Interfaces.Unsigned_8 (Value / 256);
+
+      R       : constant LEDXX_Register :=
+        (LED_ON_H  => 0,
+         LED_ON_L  => 0,
+         LED_OFF_L => L,
+         LED_OFF_H => H);
+      R_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 4)
+        with Address => R'Address;
+      Success  : Boolean := True;
+
+   begin
+      Self.Bus.Write_Synchronous
+       (Self.Device_Address, Base, R_Buffer, Success);
+   end Set_Something;
 
 end BBF.Drivers.PCA9685;
