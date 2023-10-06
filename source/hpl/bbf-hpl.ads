@@ -142,4 +142,10 @@ package BBF.HPL is
    --  Enable handling of the interrupts by the CPU. Can be used in privileged
    --  mode only.
 
+   function Is_Interrupts_Disabled return Boolean with Inline;
+   --  Returns True when interrupts are disabled.
+
+   function Is_Interrupts_Enabled return Boolean with Inline;
+   --  Returns True when interrupts are enabled.
+
 end BBF.HPL;

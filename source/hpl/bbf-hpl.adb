@@ -70,4 +70,42 @@ package body BBF.HPL is
          Volatile => True);
    end Enable_Interrupts;
 
+   ----------------------------
+   -- Is_Interrupts_Disabled --
+   ----------------------------
+
+   function Is_Interrupts_Disabled return Boolean is
+      use type Interfaces.Unsigned_32;
+
+      Value : Interfaces.Unsigned_32;
+
+   begin
+      System.Machine_Code.Asm
+        (Template => "mrs %0, primask",
+         Outputs  => Interfaces.Unsigned_32'Asm_Output ("=r", Value),
+         Clobber  => "memory",
+         Volatile => True);
+
+      return Value /= 0;
+   end Is_Interrupts_Disabled;
+
+   ---------------------------
+   -- Is_Interrupts_Enabled --
+   ---------------------------
+
+   function Is_Interrupts_Enabled return Boolean is
+      use type Interfaces.Unsigned_32;
+
+      Value : Interfaces.Unsigned_32;
+
+   begin
+      System.Machine_Code.Asm
+        (Template => "mrs %0, primask",
+         Outputs  => Interfaces.Unsigned_32'Asm_Output ("=r", Value),
+         Clobber  => "memory",
+         Volatile => True);
+
+      return Value = 0;
+   end Is_Interrupts_Enabled;
+
 end BBF.HPL;
