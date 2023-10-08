@@ -43,6 +43,7 @@
 --  I2C Bus Master on top of TWI controller
 
 with Interfaces;
+with System;
 
 with BBF.BSL.GPIO;
 with BBF.HPL.PIO;
@@ -58,9 +59,17 @@ package BBF.BSL.I2C_Masters is
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
       SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
       SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
-        limited new BBF.I2C.Master.I2C_Master_Controller with null record;
+        limited new BBF.I2C.Master.I2C_Master_Controller with private;
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
+
+   overriding procedure Write_Asynchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : System.Address;
+      Length           : Interfaces.Unsigned_16);
+   --  XXX Callbacks!
 
    overriding function Probe
     (Self    : in out SAM3_I2C_Master_Controller;
@@ -93,5 +102,16 @@ package BBF.BSL.I2C_Masters is
      Internal_Address : Interfaces.Unsigned_8;
      Data             : out BBF.I2C.Unsigned_8_Array;
      Success          : out Boolean);
+
+private
+
+   type SAM3_I2C_Master_Controller
+     (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
+      Peripheral   : BBF.HPL.Peripheral_Identifier;
+      SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SCL_Function : BBF.HPL.PIO.Peripheral_Function;
+      SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
+        limited new BBF.I2C.Master.I2C_Master_Controller with null record;
 
 end BBF.BSL.I2C_Masters;

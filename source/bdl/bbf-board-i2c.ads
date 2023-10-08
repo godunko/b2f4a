@@ -58,19 +58,19 @@ package BBF.Board.I2C is
 private
 
    TWI0_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
-     := (Controller   => BBF.HRI.TWI.TWI0_Periph'Access,
-         Peripheral   => BBF.HPL.Two_Wire_Interface_0,
-         SCL          => PA18_TWCK0_Pin'Access,
-         SCL_Function => BBF.HPL.PIO.A,
-         SDA          => PA17_TWD0_Pin'Access,
-         SDA_Function => BBF.HPL.PIO.A);
+     (Controller   => BBF.HRI.TWI.TWI0_Periph'Access,
+      Peripheral   => BBF.HPL.Two_Wire_Interface_0,
+      SCL          => PA18_TWCK0_Pin'Access,
+      SCL_Function => BBF.HPL.PIO.A,
+      SDA          => PA17_TWD0_Pin'Access,
+      SDA_Function => BBF.HPL.PIO.A);
    TWI1_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
-     := (Controller   => BBF.HRI.TWI.TWI1_Periph'Access,
-         Peripheral   => BBF.HPL.Two_Wire_Interface_1,
-         SCL          => PB13_TWCK1_Pin'Access,
-         SCL_Function => BBF.HPL.PIO.A,
-         SDA          => PB12_TWD1_Pin'Access,
-         SDA_Function => BBF.HPL.PIO.A);
+     (Controller   => BBF.HRI.TWI.TWI1_Periph'Access,
+      Peripheral   => BBF.HPL.Two_Wire_Interface_1,
+      SCL          => PB13_TWCK1_Pin'Access,
+      SCL_Function => BBF.HPL.PIO.A,
+      SDA          => PB12_TWD1_Pin'Access,
+      SDA_Function => BBF.HPL.PIO.A);
 
    I2C0 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class
      := TWI0_I2C'Access;

@@ -44,12 +44,21 @@
 pragma Restrictions (No_Elaboration_Code);
 
 with Interfaces;
+with System;
 
 package BBF.I2C.Master is
 
    pragma Preelaborate;
 
    type I2C_Master_Controller is limited interface;
+
+   not overriding procedure Write_Asynchronous
+     (Self             : in out I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : System.Address;
+      Length           : Interfaces.Unsigned_16) is abstract;
+   --  Write data to the given device asynchronously.
 
    not overriding function Probe
      (Self    : in out I2C_Master_Controller;
