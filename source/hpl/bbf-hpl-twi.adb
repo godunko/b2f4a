@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -40,6 +40,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Unchecked_Conversion;
+
+with System.Storage_Elements;
+
 package body BBF.HPL.TWI is
 
    procedure Reset (Self : TWI);
@@ -54,6 +58,99 @@ package body BBF.HPL.TWI is
       Speed                : Interfaces.Unsigned_32;
       Success              : out Boolean);
    --  Set the I2C bus speed in conjunction with the clock frequency.
+
+   -----------------------
+   -- Disable_Interrupt --
+   -----------------------
+
+   procedure Disable_Interrupt
+     (Self      : TWI;
+      Interrupt : TWI_Interrupt)
+   is
+      Mask  : constant BBF.HRI.TWI.TWI0_IDR_Register :=
+        (TXCOMP => Interrupt = Transmission_Completed,
+         RXRDY  => Interrupt = Receive_Holding_Register_Ready,
+         TXRDY  => Interrupt = Transmit_Holding_Register_Ready,
+         SVACC  => Interrupt = Slave_Access,
+         GACC   => Interrupt = General_Call_Access,
+         OVRE   => Interrupt = Overrun_Error,
+         NACK   => Interrupt = Not_Acknowledge,
+         ARBLST => Interrupt = Arbitration_Lost,
+         SCL_WS => Interrupt = Clock_Wait_State,
+         EOSACC => Interrupt = End_Of_Slave_Access,
+         ENDRX  => Interrupt = End_Of_Receive_Buffer,
+         ENDTX  => Interrupt = End_Of_Transmit_Buffer,
+         RXBUFF => Interrupt = Receive_Buffer_Full,
+         TXBUFE => Interrupt = Transmit_Buffer_Empty,
+         others => <>);
+      Dummy : BBF.HRI.TWI.TWI0_SR_Register;
+
+   begin
+      Self.IDR := Mask;
+      Dummy    := Self.SR;  --  Dummy read.
+   end Disable_Interrupt;
+
+   ------------------------
+   -- Disable_Interrupts --
+   ------------------------
+
+   procedure Disable_Interrupts (Self : TWI) is
+      Dummy : BBF.HRI.TWI.TWI0_SR_Register;
+
+   begin
+      Self.IDR :=
+        (TXCOMP | RXRDY | TXRDY | SVACC | GACC | OVRE | NACK | ARBLST
+           | SCL_WS | EOSACC | ENDRX | ENDTX | RXBUFF | TXBUFE => True,
+         others => <>);
+      Dummy    := Self.SR;  --  Dummy read of status register
+   end Disable_Interrupts;
+
+   ----------------------------
+   -- Disable_Receive_Buffer --
+   ----------------------------
+
+   procedure Disable_Receive_Buffer (Self : TWI) is
+   begin
+      Self.PTCR := (RXTDIS => True, others => <>);
+   end Disable_Receive_Buffer;
+
+   ---------------------------------
+   -- Disable_Transmission_Buffer --
+   ---------------------------------
+
+   procedure Disable_Transmission_Buffer (Self : TWI) is
+   begin
+      Self.PTCR := (TXTDIS => True, others => <>);
+   end Disable_Transmission_Buffer;
+
+   ----------------------
+   -- Enable_Interrupt --
+   ----------------------
+
+   procedure Enable_Interrupt
+     (Self      : TWI;
+      Interrupt : TWI_Interrupt)
+   is
+      Mask : constant BBF.HRI.TWI.TWI0_IER_Register :=
+        (TXCOMP => Interrupt = Transmission_Completed,
+         RXRDY  => Interrupt = Receive_Holding_Register_Ready,
+         TXRDY  => Interrupt = Transmit_Holding_Register_Ready,
+         SVACC  => Interrupt = Slave_Access,
+         GACC   => Interrupt = General_Call_Access,
+         OVRE   => Interrupt = Overrun_Error,
+         NACK   => Interrupt = Not_Acknowledge,
+         ARBLST => Interrupt = Arbitration_Lost,
+         SCL_WS => Interrupt = Clock_Wait_State,
+         EOSACC => Interrupt = End_Of_Slave_Access,
+         ENDRX  => Interrupt = End_Of_Receive_Buffer,
+         ENDTX  => Interrupt = End_Of_Transmit_Buffer,
+         RXBUFF => Interrupt = Receive_Buffer_Full,
+         TXBUFE => Interrupt = Transmit_Buffer_Empty,
+         others => <>);
+
+   begin
+      Self.IER := Mask;
+   end Enable_Interrupt;
 
    ------------------------
    -- Enable_Master_Mode --
@@ -70,6 +167,54 @@ package body BBF.HPL.TWI is
       Self.CR.MSEN := True;
    end Enable_Master_Mode;
 
+   ---------------------------
+   -- Enable_Receive_Buffer --
+   ---------------------------
+
+   procedure Enable_Receive_Buffer (Self : TWI) is
+   begin
+      Self.PTCR := (RXTEN => True, others => <>);
+   end Enable_Receive_Buffer;
+
+   --------------------------------
+   -- Enable_Transmission_Buffer --
+   --------------------------------
+
+   procedure Enable_Transmission_Buffer (Self : TWI) is
+   begin
+      Self.PTCR := (TXTEN => True, others => <>);
+   end Enable_Transmission_Buffer;
+
+   -----------------------
+   -- Get_Masked_Status --
+   -----------------------
+
+   function Get_Masked_Status (Self : TWI) return TWI_Status is
+
+      use type BBF.HRI.UInt32;
+
+      function To_UInt32 is
+        new Ada.Unchecked_Conversion
+             (BBF.HRI.TWI.TWI0_SR_Register, BBF.HRI.UInt32);
+      function To_UInt32 is
+        new Ada.Unchecked_Conversion
+          (BBF.HRI.TWI.TWI0_IMR_Register, BBF.HRI.UInt32);
+      function To_TWI_Status is
+        new Ada.Unchecked_Conversion (BBF.HRI.UInt32, TWI_Status);
+
+   begin
+      return To_TWI_Status (To_UInt32 (Self.SR) and To_UInt32 (Self.IMR));
+   end Get_Masked_Status;
+
+   ----------------
+   -- Get_Status --
+   ----------------
+
+   function Get_Status (Self : TWI) return TWI_Status is
+   begin
+      return TWI_Status (Self.SR);
+   end Get_Status;
+
    -----------------------
    -- Initialize_Master --
    -----------------------
@@ -85,14 +230,7 @@ package body BBF.HPL.TWI is
    begin
       --  Disable TWI interrupts
 
-      Self.IDR :=
-        (TXCOMP | RXRDY | TXRDY | SVACC | GACC | OVRE | NACK | ARBLST
-           | SCL_WS | EOSACC | ENDRX | ENDTX | RXBUFF | TXBUFE => True,
-         others => <>);
-
-      --  Dummy read in status register
-
-      Dummy_SR := Self.SR;
+      Disable_Interrupts (Self);
 
       --  Reset TWI peripheral
 
@@ -182,6 +320,43 @@ package body BBF.HPL.TWI is
 
       Dummy_Byte := Self.RHR.RXDATA;
    end Reset;
+
+   -------------------------
+   -- Send_Stop_Condition --
+   -------------------------
+
+   procedure Send_Stop_Condition (Self : TWI) is
+   begin
+      Self.CR := (STOP => True, others => <>);
+   end Send_Stop_Condition;
+
+   ------------------------
+   -- Set_Receive_Buffer --
+   ------------------------
+
+   procedure Set_Receive_Buffer
+     (Self   : TWI;
+      Buffer : System.Address;
+      Length : Interfaces.Unsigned_16) is
+   begin
+      Self.RPR :=
+        BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Buffer));
+      Self.RCR := (RXCTR => BBF.HRI.UInt16 (Length), others => <>);
+   end Set_Receive_Buffer;
+
+   -----------------------------
+   -- Set_Transmission_Buffer --
+   -----------------------------
+
+   procedure Set_Transmission_Buffer
+     (Self   : TWI;
+      Buffer : System.Address;
+      Length : Interfaces.Unsigned_16) is
+   begin
+      Self.TPR :=
+        BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Buffer));
+      Self.TCR := (TXCTR => BBF.HRI.UInt16 (Length), others => <>);
+   end Set_Transmission_Buffer;
 
    ---------------
    -- Set_Speed --
