@@ -100,15 +100,6 @@ package body BBF.Drivers.PCA9685 is
       MODE2 : MODE2_Register;
    end record;
 
-   type LEDXX_Register is record
-      LED_ON_L  : Interfaces.Unsigned_8;
-      LED_ON_H  : Interfaces.Unsigned_8;
-      LED_OFF_L : Interfaces.Unsigned_8;
-      LED_OFF_H : Interfaces.Unsigned_8;
-   end record;
-   --  XXX H registers may be split into parts: high bits of counter, reset bit
-   --  and reserved bits.
-
    function Device_Address
     (Self : PCA9685_Controller'Class) return BBF.I2C.Device_Address;
    --  Returns device address on I2C bus.
@@ -228,12 +219,19 @@ package body BBF.Drivers.PCA9685 is
       --
       --  It is down by setting of bit 4 in ALL_LED_OFF_H register.
 
-      Self.Bus.Write_Synchronous
-        (Self.Device_Address, ALL_LED_OFF_H_Address, 16#10#, Success);
+      declare
+         R : constant LED_OFF_H_Register :=
+           (Count => 0, Off => True, others => False);
+         B : BBF.I2C.Unsigned_8_Array (1 .. 1) with Address => R'Address;
 
-      if not Success then
-         return;
-      end if;
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device_Address, ALL_LED_OFF_H_Address, B, Success);
+
+         if not Success then
+            return;
+         end if;
+      end;
 
       --  Configure PCA9685 to almost default configuration and push into the
       --  sleep state. Sleep state is necessary be able to write PRE_SCALE
@@ -282,6 +280,7 @@ package body BBF.Drivers.PCA9685 is
          end if;
       end;
 
+      Self.Buffer      := (others => <>);
       Self.Initialized := True;
    end Initialize;
 
@@ -296,23 +295,18 @@ package body BBF.Drivers.PCA9685 is
    is
       use type Interfaces.Unsigned_8;
 
-      Base    : constant Interfaces.Unsigned_8 :=
+      Base     : constant Interfaces.Unsigned_8 :=
         Interfaces.Unsigned_8 (Channel) * 4 + LED0_ON_L_Address;
-      L       : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8 (Value mod 256);
-      H       : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8 (Value / 256);
-
-      R       : constant LEDXX_Register :=
-        (LED_ON_H  => 0,
-         LED_ON_L  => 0,
-         LED_OFF_L => L,
-         LED_OFF_H => H);
-      R_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 4)
-        with Address => R'Address;
       Success  : Boolean := True;
+      R_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 4)
+        with Address => Self.Buffer (Channel)'Address;
 
    begin
+      Self.Buffer (Channel) :=
+        (LED_ON_L  => (Count => 0),
+         LED_ON_H  => (Count => 0, others => <>),
+         LED_OFF_L => (Count => LSB_Count (Value mod 256)),
+         LED_OFF_H => (Count => MSB_Count (Value / 256), others => <>));
       Self.Bus.Write_Synchronous
        (Self.Device_Address, Base, R_Buffer, Success);
    end Set_Something;

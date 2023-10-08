@@ -84,10 +84,58 @@ package BBF.Drivers.PCA9685 is
 
 private
 
+   type LSB_Count is mod 2 ** 8;
+   type MSB_Count is mod 2 ** 4;
+
+   type LED_ON_L_Register is record
+      Count : LSB_Count := 0;
+   end record
+     with Pack,
+          Size => 8;
+
+   type LED_ON_H_Register is record
+      Count      : MSB_Count := 0;
+      On         : Boolean   := False;
+      Reserved_1 : Boolean   := False;
+      Reserved_2 : Boolean   := False;
+      Reserved_3 : Boolean   := False;
+   end record
+     with Pack,
+          Size => 8;
+
+   type LED_OFF_L_Register is record
+      Count : LSB_Count := 0;
+   end record
+     with Pack,
+          Size => 8;
+
+   type LED_OFF_H_Register is record
+      Count      : MSB_Count := 0;
+      Off        : Boolean   := False;
+      Reserved_1 : Boolean   := False;
+      Reserved_2 : Boolean   := False;
+      Reserved_3 : Boolean   := False;
+   end record
+     with Pack,
+          Size => 8;
+
+   type LEDXX_Register is record
+      LED_ON_L  : LED_ON_L_Register;
+      LED_ON_H  : LED_ON_H_Register;
+      LED_OFF_L : LED_OFF_L_Register;
+      LED_OFF_H : LED_OFF_H_Register;
+   end record
+     with Pack;
+
+   type LED_Register_Buffer is array (Channel_Identifier) of LEDXX_Register;
+
    type PCA9685_Controller
      (Bus : not null access BBF.I2C.Master.I2C_Master_Controller'Class)
         is tagged limited
    record
+      Buffer      : LED_Register_Buffer := (others => <>);
+      --  Buffer to prepare values to be send to controller's registers.
+
       Initialized : Boolean := False;
       --  Controller has been initialized.
    end record;
