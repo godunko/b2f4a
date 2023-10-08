@@ -290,6 +290,7 @@ package body BBF.HPL.UART is
       BBF.HRI.UART.UART_Periph.TNCR :=
         (TXNCTR => BBF.HRI.UInt16 (Next_Length), others => <>);
    end Set_Transmission_Buffer;
+
    -----------
    -- UART0 --
    -----------
