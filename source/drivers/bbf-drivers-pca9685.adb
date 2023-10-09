@@ -115,9 +115,12 @@ package body BBF.Drivers.PCA9685 is
    is
       use type Interfaces.Unsigned_16;
 
+      --  Equation (1) in 7.3.5 assume use of real numbers. Modified version is
+      --  used to produce same result with integer operations only.
+
       Scale       : constant Interfaces.Unsigned_8 :=
         Interfaces.Unsigned_8
-         (Interfaces.Unsigned_16 (OSC_CLOCK / 4_096) / Frequency - 1);
+         ((Interfaces.Unsigned_16 (2 * OSC_CLOCK / 4_096) / Frequency - 1) / 2);
 
       MODE        : MODE_Register;
       MODE_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 2)
