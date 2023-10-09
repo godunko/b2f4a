@@ -295,11 +295,8 @@ package body BBF.Drivers.PCA9685 is
    is
       use type Interfaces.Unsigned_8;
 
-      Base     : constant Interfaces.Unsigned_8 :=
+      Base : constant Interfaces.Unsigned_8 :=
         Interfaces.Unsigned_8 (Channel) * 4 + LED0_ON_L_Address;
-      Success  : Boolean := True;
-      R_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 4)
-        with Address => Self.Buffer (Channel)'Address;
 
    begin
       Self.Buffer (Channel) :=
@@ -307,8 +304,8 @@ package body BBF.Drivers.PCA9685 is
          LED_ON_H  => (Count => 0, others => <>),
          LED_OFF_L => (Count => LSB_Count (Value mod 256)),
          LED_OFF_H => (Count => MSB_Count (Value / 256), others => <>));
-      Self.Bus.Write_Synchronous
-       (Self.Device_Address, Base, R_Buffer, Success);
+      Self.Bus.Write_Asynchronous
+        (Self.Device_Address, Base, Self.Buffer (Channel)'Address, 4);
    end Set_Something;
 
 end BBF.Drivers.PCA9685;
