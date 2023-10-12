@@ -64,6 +64,7 @@ package BBF.Board is
    Pin_13_LED : constant not null access BBF.GPIO.Pin'Class;
    Pin_20_SDA : constant not null access BBF.GPIO.Pin'Class;
    Pin_21_SCL : constant not null access BBF.GPIO.Pin'Class;
+   Pin_50     : constant not null access BBF.GPIO.Pin'Class;
    Pin_52     : constant not null access BBF.GPIO.Pin'Class;
    Pin_53     : constant not null access BBF.GPIO.Pin'Class;
 
@@ -108,6 +109,10 @@ private
      := (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
          Pin        => 27);
 
+   PC13_Pin       : aliased BBF.BSL.GPIO.SAM3_GPIO_Pin
+     := (Controller => BBF.HRI.PIO.PIOC_Periph'Access,
+         Pin        => 13);
+
    Delay_Instance : aliased BBF.BSL.Delays.SAM_SYSTICK_Controller
      := (Controller => BBF.HRI.SYST.SYST_Periph'Access);
 
@@ -131,6 +136,8 @@ private
      := PB12_TWD1_Pin'Access;
    Pin_21_SCL : constant not null access BBF.GPIO.Pin'Class
      := PB13_TWCK1_Pin'Access;
+   Pin_50     : constant not null access BBF.GPIO.Pin'Class
+     := PC13_Pin'Access;
    Pin_52     : constant not null access BBF.GPIO.Pin'Class
      := PB21_Pin'Access;
    Pin_53     : constant not null access BBF.GPIO.Pin'Class
