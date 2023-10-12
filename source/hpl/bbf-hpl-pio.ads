@@ -1,44 +1,15 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
+--                           Bare Board Framework                           --
 --                                                                          --
---                           Hardware Proxy Layer                           --
---                                                                          --
---                        Runtime Library Component                         --
+--                        Hardware Abstraction Layer                        --
 --                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 --  Parallel Input/Output Controller (PIO) API
 
@@ -58,6 +29,9 @@ package BBF.HPL.PIO is
      with Component_Size => 1, Size => 32;
 
    type Peripheral_Function is (A, B);
+
+   type Status is private;
+   --  Interrupt status
 
    function PIOA return PIO;
    function PIOB return PIO;
@@ -81,6 +55,24 @@ package BBF.HPL.PIO is
    --  Configure IO of a PIO controller as being controlled by a specific
    --  peripheral.
 
+   procedure Set_Edge (Base : PIO; Mask : PIO_Pin_Array) with Inline;
+   --  Configure given pins to report interrupts on signal edge.
+
+   procedure Set_Level (Base : PIO; Mask : PIO_Pin_Array) with Inline;
+   --  Configure given pins to report interrupts on signal level.
+
+   procedure Set_Falling_Low (Base : PIO; Mask : PIO_Pin_Array) with Inline;
+   --  Configure given pins to report interrupts on falling edge/low level.
+
+   procedure Set_Rising_High (Base : PIO; Mask : PIO_Pin_Array) with Inline;
+   --  Configure given pins to report interrupts on rising edge/high level.
+
+   procedure Enable_Interrupt (Base : PIO; Mask : PIO_Pin_Array) with Inline;
+   --  Enable interrupt generation by given pins.
+
+   procedure Disable_Interrupt (Base : PIO; Mask : PIO_Pin_Array) with Inline;
+   --  Enable interrupt generation by given pins.
+
    procedure Set (Base : PIO; Mask : PIO_Pin_Array);
    --  Set a high output level on all the PIOs defined in Mask. This has no
    --  immediate effects on PIOs that are not output, but the PIO controller
@@ -92,5 +84,20 @@ package BBF.HPL.PIO is
    --  Set a low output level on all the PIOs defined in Mask. This has no
    --  immediate effects on PIOs that are not output, but the PIO controller
    --  will save the value if they are changed to outputs.
+
+   function Get_And_Clear_Status (Base : PIO) return Status with Inline;
+   --  Returns interrupt status. Note, interrupt handler should read status
+   --  once and process all reported events.
+
+   function Is_Detected (Self : Status; Pin : PIO_Pin) return Boolean
+     with Inline;
+   --  Returns True when signal change on the given pin has been detected.
+
+private
+
+   type Status is new PIO_Pin_Array;
+
+   function Is_Detected (Self : Status; Pin : PIO_Pin) return Boolean is
+     (Self (Pin));
 
 end BBF.HPL.PIO;

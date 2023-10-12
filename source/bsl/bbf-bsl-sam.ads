@@ -6,22 +6,24 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --
---  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--  Copyright (C) 2023, Vadim Godunko <vgodunko@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
 
+--  This package provides base type of mixed purpose EI/PIO pin.
+
 pragma Restrictions (No_Elaboration_Code);
 
-with System;
+with BBF.External_Interrupts;
+with BBF.GPIO;
 
-package BBF is
+package BBF.BSL.SAM is
 
    pragma Pure;
 
-   type Callback is access procedure (Closure : System.Address);
-   --  Callback function.
-   --
-   --  @param Closure  User defined data, provided on callback registration.
+   type Pin is limited interface
+     and BBF.External_Interrupts.Pin
+     and BBF.GPIO.Pin;
 
-end BBF;
+end BBF.BSL.SAM;

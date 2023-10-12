@@ -1,44 +1,15 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
+--                           Bare Board Framework                           --
 --                                                                          --
---                           Hardware Proxy Layer                           --
---                                                                          --
---                        Runtime Library Component                         --
+--                        Hardware Abstraction Layer                        --
 --                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 package body BBF.HPL.PIO is
 
@@ -53,6 +24,24 @@ package body BBF.HPL.PIO is
          Arr      => BBF.HRI.PIO.PIOA_CODR_P_Field_Array (Mask));
    end Clear;
 
+   -----------------------
+   -- Disable_Interrupt --
+   -----------------------
+
+   procedure Disable_Interrupt (Base : PIO; Mask : PIO_Pin_Array) is
+   begin
+      Base.IDR.Arr := BBF.HRI.PIO.PIOA_IDR_P_Field_Array (Mask);
+   end Disable_Interrupt;
+
+   ----------------------
+   -- Enable_Interrupt --
+   ----------------------
+
+   procedure Enable_Interrupt (Base : PIO; Mask : PIO_Pin_Array) is
+   begin
+      Base.IER.Arr := BBF.HRI.PIO.PIOA_IER_P_Field_Array (Mask);
+   end Enable_Interrupt;
+
    ---------
    -- Get --
    ---------
@@ -61,6 +50,15 @@ package body BBF.HPL.PIO is
    begin
       return PIO_Pin_Array (Base.PDSR.Arr);
    end Get;
+
+   --------------------------
+   -- Get_And_Clear_Status --
+   --------------------------
+
+   function Get_And_Clear_Status (Base : PIO) return Status is
+   begin
+      return Status (Base.ISR.Arr);
+   end Get_And_Clear_Status;
 
    ----------
    -- PIOA --
@@ -108,6 +106,33 @@ package body BBF.HPL.PIO is
         (As_Array => True,
          Arr      => BBF.HRI.PIO.PIOA_SODR_P_Field_Array (Mask));
    end Set;
+
+   --------------
+   -- Set_Edge --
+   --------------
+
+   procedure Set_Edge (Base : PIO; Mask : PIO_Pin_Array) is
+   begin
+      Base.ESR.Arr := BBF.HRI.PIO.PIOA_ESR_P_Field_Array (Mask);
+   end Set_Edge;
+
+   ---------------------
+   -- Set_Falling_Low --
+   ---------------------
+
+   procedure Set_Falling_Low (Base : PIO; Mask : PIO_Pin_Array) is
+   begin
+      Base.FELLSR.Arr := BBF.HRI.PIO.PIOA_FELLSR_P_Field_Array (Mask);
+   end Set_Falling_Low;
+
+   ---------------
+   -- Set_Level --
+   ---------------
+
+   procedure Set_Level (Base : PIO; Mask : PIO_Pin_Array) is
+   begin
+      Base.LSR.Arr := BBF.HRI.PIO.PIOA_LSR_P_Field_Array (Mask);
+   end Set_Level;
 
    ----------------
    -- Set_Output --
@@ -179,5 +204,14 @@ package body BBF.HPL.PIO is
 
       Base.PDR.Arr := BBF.HRI.PIO.PIOA_PDR_P_Field_Array (Mask);
    end Set_Peripheral;
+
+   ---------------------
+   -- Set_Rising_High --
+   ---------------------
+
+   procedure Set_Rising_High (Base : PIO; Mask : PIO_Pin_Array) is
+   begin
+      Base.REHLSR.Arr := BBF.HRI.PIO.PIOA_REHLSR_P_Field_Array (Mask);
+   end Set_Rising_High;
 
 end BBF.HPL.PIO;
