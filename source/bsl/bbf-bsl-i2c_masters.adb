@@ -67,7 +67,7 @@ package body BBF.BSL.I2C_Masters is
    Controller :
      array (BBF.HPL.Peripheral_Identifier
             range BBF.HPL.Two_Wire_Interface_0 .. BBF.HPL.Two_Wire_Interface_1)
-       of SAM3_I2C_Master_Controller_Access;
+       of SAM3_I2C_Master_Controller_Access := (others => null);
    --  Controller objects to be used by interrupt handlers.
 
    ----------------
@@ -155,6 +155,8 @@ package body BBF.BSL.I2C_Masters is
    ------------------
 
    procedure TWI0_Handler is
+      use type Interfaces.Unsigned_16;
+
       Self   : SAM3_I2C_Master_Controller_Access :=
         Controller (BBF.HPL.Two_Wire_Interface_0);
       Status : constant BBF.HPL.TWI.TWI_Status :=
@@ -206,6 +208,45 @@ package body BBF.BSL.I2C_Masters is
            (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
          BBF.HPL.TWI.Disable_Interrupt
            (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
+
+         --  Dequeue next operation and start it when available.
+
+         if Operation_Queues.Dequeue (Self.Queue, Self.Current) then
+            if Self.Current.Length = 1 then
+               raise Program_Error with "1 byte I2C write not implemented";
+
+            else
+               BBF.HPL.TWI.Set_Transmission_Buffer
+                 (Self.Controller, Self.Current.Data, Self.Current.Length);
+
+               --  Set write mode, slave address and 3 internal address byte
+               --  lengths
+
+               Self.Controller.MMR := (others => <>);
+               Self.Controller.MMR :=
+                 (DADR   =>
+                    BBF.HRI.TWI.TWI0_MMR_DADR_Field (Self.Current.Device),
+                  MREAD  => False,
+                  IADRSZ => BBF.HRI.TWI.Val_1_Byte,
+                  others => <>);
+
+               --  Set internal address for remote chip
+
+               Self.Controller.IADR := (others => <>);
+               Self.Controller.IADR :=
+                 (IADR   =>
+                    BBF.HRI.TWI.TWI0_IADR_IADR_Field (Self.Current.Register),
+                  others => <>);
+
+               --  Enable interrupts and transfer
+
+               BBF.HPL.TWI.Enable_Interrupt
+                 (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
+               BBF.HPL.TWI.Enable_Interrupt
+                 (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
+               BBF.HPL.TWI.Enable_Transmission_Buffer (Self.Controller);
+            end if;
+         end if;
       end if;
    end TWI0_Handler;
 
@@ -227,46 +268,25 @@ package body BBF.BSL.I2C_Masters is
       Address          : BBF.I2C.Device_Address;
       Internal_Address : BBF.I2C.Internal_Address_8;
       Data             : System.Address;
-      Length           : Interfaces.Unsigned_16)
-   is
-      use type Interfaces.Unsigned_16;
-
+      Length           : Interfaces.Unsigned_16) is
    begin
-      --  XXX Check transfer is in progress!
+      --  Enqueue opetation
 
-      if Length = 1 then
-         raise Program_Error with "1 byte I2C write not implemented";
-
-      else
-         BBF.HPL.TWI.Disable_Interrupt
-           (Self.Controller, BBF.HPL.TWI.Transmit_Holding_Register_Ready);
-         BBF.HPL.TWI.Set_Transmission_Buffer
-           (Self.Controller, Data, Length);
-
-         --  Set write mode, slave address and 3 internal address byte lengths
-
-         Self.Controller.MMR := (others => <>);
-         Self.Controller.MMR :=
-           (DADR   => BBF.HRI.TWI.TWI0_MMR_DADR_Field (Address),
-            MREAD  => False,
-            IADRSZ => BBF.HRI.TWI.Val_1_Byte,
-            others => <>);
-
-         --  Set internal address for remote chip
-
-         Self.Controller.IADR := (others => <>);
-         Self.Controller.IADR :=
-           (IADR   => BBF.HRI.TWI.TWI0_IADR_IADR_Field (Internal_Address),
-            others => <>);
-
-         --  Enable interrupts and transfer
-
-         BBF.HPL.TWI.Enable_Interrupt
-           (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
-         BBF.HPL.TWI.Enable_Interrupt
-           (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
-         BBF.HPL.TWI.Enable_Transmission_Buffer (Self.Controller);
+      if not Operation_Queues.Enqueue
+        (Self.Queue,
+         (Device   => Address,
+          Register => Internal_Address,
+          Data     => Data,
+          Length   => Length))
+      then
+         raise Program_Error;
       end if;
+
+      --  Enable Transmission_Completed interrupt to start operation if there
+      --  is no active operation.
+
+      BBF.HPL.TWI.Enable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
    end Write_Asynchronous;
 
    -----------------------

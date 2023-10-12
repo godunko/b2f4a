@@ -42,15 +42,20 @@
 
 --  I2C Bus Master on top of TWI controller
 
+pragma Restrictions (No_Elaboration_Code);
+
 with Interfaces;
 with System;
 
+private with BBF.ADT.Generic_MPMC_Bounded_Queues;
 with BBF.BSL.GPIO;
 with BBF.HPL.PIO;
 with BBF.HRI.TWI;
 with BBF.I2C.Master;
 
 package BBF.BSL.I2C_Masters is
+
+   pragma Preelaborate;
 
    type SAM3_I2C_Master_Controller
      (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
@@ -105,6 +110,16 @@ package BBF.BSL.I2C_Masters is
 
 private
 
+   type Operation_Record is record
+      Device   : BBF.I2C.Device_Address;
+      Register : BBF.I2C.Internal_Address_8;
+      Data     : System.Address;
+      Length   : Interfaces.Unsigned_16;
+   end record;
+
+   package Operation_Queues is
+     new BBF.ADT.Generic_MPMC_Bounded_Queues (Operation_Record);
+
    type SAM3_I2C_Master_Controller
      (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
       Peripheral   : BBF.HPL.Peripheral_Identifier;
@@ -112,6 +127,9 @@ private
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
       SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
       SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
-        limited new BBF.I2C.Master.I2C_Master_Controller with null record;
+   limited new BBF.I2C.Master.I2C_Master_Controller with record
+      Queue   : Operation_Queues.Queue (16);
+      Current : Operation_Record;
+   end record;
 
 end BBF.BSL.I2C_Masters;
