@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -44,6 +44,17 @@ package body BBF.BSL.GPIO is
 
    function Mask
     (Self : SAM3_GPIO_Pin'Class) return BBF.HPL.PIO.PIO_Pin_Array;
+
+   ---------
+   -- Get --
+   ---------
+
+   overriding function Get (Self : SAM3_GPIO_Pin) return Boolean is
+      use type BBF.HPL.PIO.PIO_Pin_Array;
+
+   begin
+      return (BBF.HPL.PIO.Get (Self.Controller) and Self.Mask) = Self.Mask;
+   end Get;
 
    ----------
    -- Mask --

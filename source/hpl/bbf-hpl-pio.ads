@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,6 +39,7 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 --  Parallel Input/Output Controller (PIO) API
 
 pragma Restrictions (No_Elaboration_Code);
@@ -84,6 +85,8 @@ package BBF.HPL.PIO is
    --  Set a high output level on all the PIOs defined in Mask. This has no
    --  immediate effects on PIOs that are not output, but the PIO controller
    --  will save the value if they are changed to outputs.
+
+   function Get (Base : PIO) return PIO_Pin_Array;
 
    procedure Clear (Base : PIO; Mask : PIO_Pin_Array);
    --  Set a low output level on all the PIOs defined in Mask. This has no

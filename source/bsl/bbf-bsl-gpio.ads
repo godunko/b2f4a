@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,6 +39,7 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 --  General Purpose Input-Output (GPIO)
 
 pragma Restrictions (No_Elaboration_Code);
@@ -62,6 +63,8 @@ package BBF.BSL.GPIO is
     (Self : SAM3_GPIO_Pin; To : BBF.GPIO.Direction);
 
    overriding procedure Set (Self : SAM3_GPIO_Pin; To : Boolean);
+
+   overriding function Get (Self : SAM3_GPIO_Pin) return Boolean;
 
    procedure Set_Peripheral
     (Self : SAM3_GPIO_Pin'Class;

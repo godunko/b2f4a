@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -39,6 +39,7 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 --  General Purpose Input-Output (GPIO)
 
 pragma Restrictions (No_Elaboration_Code);
@@ -60,6 +61,9 @@ package BBF.GPIO is
 
    not overriding procedure Set (Self : Pin; To : Boolean) is abstract;
    --  Sets output level on a pin.
+
+   not overriding function Get (Self : Pin) return Boolean is abstract;
+   --  Read the input level on pin.
 
    type Port is limited interface;
 

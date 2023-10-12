@@ -8,7 +8,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
+-- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
 -- All rights reserved.                                                     --
 --                                                                          --
 -- Redistribution and use in source and binary forms, with or without       --
@@ -52,6 +52,15 @@ package body BBF.HPL.PIO is
         (As_Array => True,
          Arr      => BBF.HRI.PIO.PIOA_CODR_P_Field_Array (Mask));
    end Clear;
+
+   ---------
+   -- Get --
+   ---------
+
+   function Get (Base : PIO) return PIO_Pin_Array is
+   begin
+      return PIO_Pin_Array (Base.PDSR.Arr);
+   end Get;
 
    ----------
    -- PIOA --
