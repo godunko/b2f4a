@@ -1,50 +1,19 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
+--                           Bare Board Framework                           --
 --                                                                          --
---                           Hardware Proxy Layer                           --
---                                                                          --
---                        Runtime Library Component                         --
+--                        Hardware Abstraction Layer                        --
 --                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 --  Two-wire Interface (TWI)
 
 pragma Restrictions (No_Elaboration_Code);
-
-with System;
 
 with BBF.HRI.TWI;
 with BBF.I2C;
@@ -141,7 +110,13 @@ package BBF.HPL.TWI is
    function Is_Transmit_Holding_Register_Ready
      (Status : TWI_Status) return Boolean with Inline;
 
+   function Is_Overrun_Error (Status : TWI_Status) return Boolean
+     with Inline;
+
    function Is_Not_Acknowledge (Status : TWI_Status) return Boolean
+     with Inline;
+
+   function Is_Arbitration_Lost (Status : TWI_Status) return Boolean
      with Inline;
 
    function Is_Transmit_Buffer_Empty (Status : TWI_Status) return Boolean
@@ -204,8 +179,12 @@ private
 
    type TWI_Status is new BBF.HRI.TWI.TWI0_SR_Register;
 
+   function Is_Arbitration_Lost (Status : TWI_Status) return Boolean is
+     (Status.ARBLST);
    function Is_Not_Acknowledge (Status : TWI_Status) return Boolean is
      (Status.NACK);
+   function Is_Overrun_Error (Status : TWI_Status) return Boolean is
+     (Status.OVRE);
    function Is_Transmission_Completed (Status : TWI_Status) return Boolean is
      (Status.TXCOMP);
    function Is_Transmit_Holding_Register_Ready
