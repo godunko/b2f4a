@@ -107,6 +107,9 @@ package BBF.HPL.TWI is
    function Is_Transmission_Completed (Status : TWI_Status) return Boolean
      with Inline;
 
+   function Is_Receive_Holding_Register_Ready
+     (Status : TWI_Status) return Boolean with Inline;
+
    function Is_Transmit_Holding_Register_Ready
      (Status : TWI_Status) return Boolean with Inline;
 
@@ -117,6 +120,12 @@ package BBF.HPL.TWI is
      with Inline;
 
    function Is_Arbitration_Lost (Status : TWI_Status) return Boolean
+     with Inline;
+
+   function Is_End_Of_Receive_Buffer (Status : TWI_Status) return Boolean
+     with Inline;
+
+   function Is_Receive_Buffer_Full (Status : TWI_Status) return Boolean
      with Inline;
 
    function Is_Transmit_Buffer_Empty (Status : TWI_Status) return Boolean
@@ -181,10 +190,16 @@ private
 
    function Is_Arbitration_Lost (Status : TWI_Status) return Boolean is
      (Status.ARBLST);
+   function Is_End_Of_Receive_Buffer (Status : TWI_Status) return Boolean is
+     (Status.ENDRX);
    function Is_Not_Acknowledge (Status : TWI_Status) return Boolean is
      (Status.NACK);
    function Is_Overrun_Error (Status : TWI_Status) return Boolean is
      (Status.OVRE);
+   function Is_Receive_Buffer_Full (Status : TWI_Status) return Boolean is
+     (Status.RXBUFF);
+   function Is_Receive_Holding_Register_Ready
+     (Status : TWI_Status) return Boolean is (Status.RXRDY);
    function Is_Transmission_Completed (Status : TWI_Status) return Boolean is
      (Status.TXCOMP);
    function Is_Transmit_Holding_Register_Ready

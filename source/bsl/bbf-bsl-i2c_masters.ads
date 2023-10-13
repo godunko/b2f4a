@@ -16,7 +16,6 @@
 pragma Restrictions (No_Elaboration_Code);
 
 with Interfaces;
-with System;
 
 private with BBF.ADT.Generic_MPMC_Bounded_Queues;
 with BBF.BSL.GPIO;
@@ -38,17 +37,6 @@ package BBF.BSL.I2C_Masters is
         limited new BBF.I2C.Master.I2C_Master_Controller with private;
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
-
-   overriding procedure Write_Asynchronous
-     (Self       : in out SAM3_I2C_Master_Controller;
-      Device     : BBF.I2C.Device_Address;
-      Register   : BBF.I2C.Internal_Address_8;
-      Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
-      On_Success : BBF.Callback;
-      On_Error   : BBF.Callback;
-      Closure    : System.Address;
-      Success    : in out Boolean);
 
    overriding function Probe
     (Self    : in out SAM3_I2C_Master_Controller;
@@ -101,6 +89,10 @@ private
             On_Success : BBF.Callback;
             On_Error   : BBF.Callback;
             Closure    : System.Address;
+            Stop       : Boolean;
+            --  STOP condition has been send
+            Retry      : Natural;
+            --  Retry counter to recover from Arbitration Lost error
       end case;
    end record;
 
@@ -118,5 +110,27 @@ private
       Queue   : Operation_Queues.Queue (16);
       Current : Operation_Record;
    end record;
+
+   overriding procedure Read_Asynchronous
+     (Self       : in out SAM3_I2C_Master_Controller;
+      Device     : BBF.I2C.Device_Address;
+      Register   : BBF.I2C.Internal_Address_8;
+      Data       : System.Address;
+      Length     : Interfaces.Unsigned_16;
+      On_Success : BBF.Callback;
+      On_Error   : BBF.Callback;
+      Closure    : System.Address;
+      Success    : in out Boolean);
+
+   overriding procedure Write_Asynchronous
+     (Self       : in out SAM3_I2C_Master_Controller;
+      Device     : BBF.I2C.Device_Address;
+      Register   : BBF.I2C.Internal_Address_8;
+      Data       : System.Address;
+      Length     : Interfaces.Unsigned_16;
+      On_Success : BBF.Callback;
+      On_Error   : BBF.Callback;
+      Closure    : System.Address;
+      Success    : in out Boolean);
 
 end BBF.BSL.I2C_Masters;

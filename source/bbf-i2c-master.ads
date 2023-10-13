@@ -24,6 +24,33 @@ package BBF.I2C.Master is
 
    type I2C_Master_Controller is limited interface;
 
+   not overriding procedure Read_Asynchronous
+     (Self       : in out I2C_Master_Controller;
+      Device     : BBF.I2C.Device_Address;
+      Register   : BBF.I2C.Internal_Address_8;
+      Data       : System.Address;
+      Length     : Interfaces.Unsigned_16;
+      On_Success : BBF.Callback;
+      On_Error   : BBF.Callback;
+      Closure    : System.Address;
+      Success    : in out Boolean) is abstract;
+   --  Initiates asynchronous read operation. Given buffer should be available
+   --  till operation ends.
+   --
+   --  @param Self        I2C bus controller
+   --  @param Device      Device address on the bus
+   --  @param Register    Internal address of the device
+   --  @param Data        Pointer to the buffer to be receive data
+   --  @param Length      Length of the data
+   --  @param On_Success
+   --    Callback to report successful completion of the operation
+   --  @param On_Error
+   --    Callback to report error condition that stops operation
+   --  @param Closure     Closure data for callbacks
+   --  @param Success
+   --    True when operation has been queued successfully, and False overwise.
+   --    Callbacks are not called when subprogram sets parameter to False.
+
    not overriding procedure Write_Asynchronous
      (Self       : in out I2C_Master_Controller;
       Device     : BBF.I2C.Device_Address;

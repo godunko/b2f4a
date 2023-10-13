@@ -119,13 +119,70 @@ package body BBF.BSL.I2C_Masters is
    ------------------
 
    procedure On_Interrupt (Self : in out SAM3_I2C_Master_Controller'Class) is
+
       use type Interfaces.Unsigned_16;
 
       Status : constant BBF.HPL.TWI.TWI_Status :=
         BBF.HPL.TWI.Get_Masked_Status (Self.Controller);
 
    begin
-      --  Transmit buffer empty
+
+      ---------------------------
+      --  Receive Buffer Full  --
+      ---------------------------
+
+      if BBF.HPL.TWI.Is_Receive_Buffer_Full (Status) then
+         --  Disable transfer and interrupt.
+
+         BBF.HPL.TWI.Disable_Receive_Buffer (Self.Controller);
+         BBF.HPL.TWI.Disable_Interrupt
+           (Self.Controller, BBF.HPL.TWI.Receive_Buffer_Full);
+
+         --  Enable Receive_Holding_Register_Ready interrupt to send STOP
+         --  condition.
+
+         BBF.HPL.TWI.Enable_Interrupt
+           (Self.Controller, BBF.HPL.TWI.Receive_Holding_Register_Ready);
+      end if;
+
+      --------------------------------------
+      --  Receive Holding Register Ready  --
+      --------------------------------------
+
+      if BBF.HPL.TWI.Is_Receive_Holding_Register_Ready (Status) then
+         declare
+            Data : BBF.I2C.Unsigned_8_Array (1 .. Integer (Self.Current.Length))
+              with Address => Self.Current.Data;
+
+         begin
+            if Self.Current.Stop then
+               --  Store last byte
+
+               Data (Data'Last) :=
+                 Interfaces.Unsigned_8 (Self.Controller.RHR.RXDATA);
+
+               --  Disable interrupt and wait till transmission completed
+
+               BBF.HPL.TWI.Disable_Interrupt
+                 (Self.Controller, BBF.HPL.TWI.Receive_Holding_Register_Ready);
+
+            else
+               --  Store last but one byte
+
+               Data (Data'Last - 1) :=
+                 Interfaces.Unsigned_8 (Self.Controller.RHR.RXDATA);
+
+               --  Send STOP condition.
+
+               BBF.HPL.TWI.Send_Stop_Condition (Self.Controller);
+               Self.Current.Stop := True;
+            end if;
+         end;
+      end if;
+
+      -----------------------------
+      --  Transmit Buffer Empty  --
+      -----------------------------
 
       if BBF.HPL.TWI.Is_Transmit_Buffer_Empty (Status) then
          --  Transfer almost completed, enable Transmit Holding Register Ready
@@ -141,7 +198,9 @@ package body BBF.BSL.I2C_Masters is
            (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
       end if;
 
-      --  Trasmit holding register ready
+      --------------------------------------
+      --  Trasmit Holding Register Ready  --
+      --------------------------------------
 
       if BBF.HPL.TWI.Is_Transmit_Holding_Register_Ready (Status) then
          --  Send STOP condition and last byte of the data.
@@ -154,16 +213,24 @@ package body BBF.BSL.I2C_Masters is
            (Self.Controller, BBF.HPL.TWI.Transmit_Holding_Register_Ready);
       end if;
 
-      --  Transmission completed
+      ------------------------------
+      --  Transmission Completed  --
+      ------------------------------
 
       if BBF.HPL.TWI.Is_Transmission_Completed (Status) then
-         --  Disable transfer and all interrupts.
+         --  Disable transfers and all interrupts.
 
+         BBF.HPL.TWI.Disable_Receive_Buffer (Self.Controller);
          BBF.HPL.TWI.Disable_Transmission_Buffer (Self.Controller);
+
          BBF.HPL.TWI.Disable_Interrupt
-           (Self.Controller, BBF.HPL.TWI.Transmit_Holding_Register_Ready);
+           (Self.Controller, BBF.HPL.TWI.Receive_Buffer_Full);
          BBF.HPL.TWI.Disable_Interrupt
            (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
+         BBF.HPL.TWI.Disable_Interrupt
+           (Self.Controller, BBF.HPL.TWI.Receive_Holding_Register_Ready);
+         BBF.HPL.TWI.Disable_Interrupt
+           (Self.Controller, BBF.HPL.TWI.Transmit_Holding_Register_Ready);
          BBF.HPL.TWI.Disable_Interrupt
            (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
          Self.Disable_Error_Interrupts;
@@ -171,39 +238,58 @@ package body BBF.BSL.I2C_Masters is
          if Self.Current.Operation /= None then
             if BBF.HPL.TWI.Is_Overrun_Error (Status)
               or BBF.HPL.TWI.Is_Not_Acknowledge (Status)
-              or BBF.HPL.TWI.Is_Arbitration_Lost (Status)
+              or (BBF.HPL.TWI.Is_Arbitration_Lost (Status)
+                    and Self.Current.Retry = 0)
             then
                if Self.Current.On_Error /= null then
                   Self.Current.On_Error (Self.Current.Closure);
                end if;
 
+               Self.Current := (Operation => None);
+
+            elsif BBF.HPL.TWI.Is_Not_Acknowledge (Status) then
+               --  Arbitration lost, try to retry operation for few times.
+
+               Self.Current.Retry := @ - 1;
+               Self.Current.Stop  := False;
+
             else
                if Self.Current.On_Success /= null then
                   Self.Current.On_Success (Self.Current.Closure);
                end if;
-            end if;
 
-            Self.Current := (Operation => None);
+               Self.Current := (Operation => None);
+            end if;
          end if;
 
-         --  Dequeue next operation and start it when available.
+         --  When there is no operation in progress, attempt to dequeue next
+         --  one
 
-         if Operation_Queues.Dequeue (Self.Queue, Self.Current) then
-            if Self.Current.Length = 1 then
-               raise Program_Error with "1 byte I2C write not implemented";
+         if Self.Current.Operation = None then
+            if not Operation_Queues.Dequeue (Self.Queue, Self.Current) then
+               return;
+            end if;
+         end if;
 
-            else
-               BBF.HPL.TWI.Set_Transmission_Buffer
-                 (Self.Controller, Self.Current.Data, Self.Current.Length);
+         --  Initiate operation.
 
-               --  Set write mode, slave address and 3 internal address byte
+         case Self.Current.Operation is
+            when Read =>
+               if Self.Current.Length <= 2 then
+                  raise Program_Error;
+               end if;
+
+               BBF.HPL.TWI.Set_Receive_Buffer
+                 (Self.Controller, Self.Current.Data, Self.Current.Length - 2);
+
+               --  Set read mode, slave address and 3 internal address byte
                --  lengths
 
                Self.Controller.MMR := (others => <>);
                Self.Controller.MMR :=
                  (DADR   =>
-                    BBF.HRI.TWI.TWI0_MMR_DADR_Field (Self.Current.Device),
-                  MREAD  => False,
+                     BBF.HRI.TWI.TWI0_MMR_DADR_Field (Self.Current.Device),
+                  MREAD  => True,
                   IADRSZ => BBF.HRI.TWI.Val_1_Byte,
                   others => <>);
 
@@ -212,19 +298,62 @@ package body BBF.BSL.I2C_Masters is
                Self.Controller.IADR := (others => <>);
                Self.Controller.IADR :=
                  (IADR   =>
-                    BBF.HRI.TWI.TWI0_IADR_IADR_Field (Self.Current.Register),
+                     BBF.HRI.TWI.TWI0_IADR_IADR_Field (Self.Current.Register),
                   others => <>);
 
-               --  Enable interrupts and transfer
+               --  Enable transfer and interrupts
 
+               BBF.HPL.TWI.Enable_Receive_Buffer (Self.Controller);
                Self.Enable_Error_Interrupts;
                BBF.HPL.TWI.Enable_Interrupt
-                 (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
+                 (Self.Controller, BBF.HPL.TWI.Receive_Buffer_Full);
                BBF.HPL.TWI.Enable_Interrupt
                  (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
-               BBF.HPL.TWI.Enable_Transmission_Buffer (Self.Controller);
-            end if;
-         end if;
+
+               --  Send a START condition
+
+               Self.Controller.CR := (START => True, others => <>);
+
+            when Write =>
+               if Self.Current.Length = 1 then
+                  raise Program_Error with "1 byte I2C write not implemented";
+
+               else
+                  BBF.HPL.TWI.Set_Transmission_Buffer
+                    (Self.Controller, Self.Current.Data, Self.Current.Length);
+
+                  --  Set write mode, slave address and 3 internal address byte
+                  --  lengths
+
+                  Self.Controller.MMR := (others => <>);
+                  Self.Controller.MMR :=
+                    (DADR   =>
+                       BBF.HRI.TWI.TWI0_MMR_DADR_Field (Self.Current.Device),
+                     MREAD  => False,
+                     IADRSZ => BBF.HRI.TWI.Val_1_Byte,
+                     others => <>);
+
+                  --  Set internal address for remote chip
+
+                  Self.Controller.IADR := (others => <>);
+                  Self.Controller.IADR :=
+                    (IADR   =>
+                       BBF.HRI.TWI.TWI0_IADR_IADR_Field (Self.Current.Register),
+                     others => <>);
+
+                  --  Enable interrupts and transfer
+
+                  BBF.HPL.TWI.Enable_Transmission_Buffer (Self.Controller);
+                  Self.Enable_Error_Interrupts;
+                  BBF.HPL.TWI.Enable_Interrupt
+                    (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
+                  BBF.HPL.TWI.Enable_Interrupt
+                    (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
+               end if;
+
+            when None =>
+               raise Program_Error;
+         end case;
       end if;
    end On_Interrupt;
 
@@ -238,6 +367,52 @@ package body BBF.BSL.I2C_Masters is
    begin
       return BBF.HPL.TWI.Probe (Self.Controller, Address);
    end Probe;
+
+   -----------------------
+   -- Read_Asynchronous --
+   -----------------------
+
+   overriding procedure Read_Asynchronous
+     (Self       : in out SAM3_I2C_Master_Controller;
+      Device     : BBF.I2C.Device_Address;
+      Register   : BBF.I2C.Internal_Address_8;
+      Data       : System.Address;
+      Length     : Interfaces.Unsigned_16;
+      On_Success : BBF.Callback;
+      On_Error   : BBF.Callback;
+      Closure    : System.Address;
+      Success    : in out Boolean) is
+   begin
+      if not Success then
+         return;
+      end if;
+
+      --  Enqueue opetation
+
+      Success :=
+        Operation_Queues.Enqueue
+          (Self.Queue,
+           (Operation  => Read,
+            Device     => Device,
+            Register   => Register,
+            Data       => Data,
+            Length     => Length,
+            On_Success => On_Success,
+            On_Error   => On_Error,
+            Closure    => Closure,
+            Stop       => False,
+            Retry      => 3));
+
+      if not Success then
+         return;
+      end if;
+
+      --  Enable Transmission_Completed interrupt to start operation if there
+      --  is no active operation.
+
+      BBF.HPL.TWI.Enable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
+   end Read_Asynchronous;
 
    ----------------------
    -- Read_Synchronous --
@@ -322,7 +497,9 @@ package body BBF.BSL.I2C_Masters is
             Length     => Length,
             On_Success => On_Success,
             On_Error   => On_Error,
-            Closure    => Closure));
+            Closure    => Closure,
+            Stop       => False,
+            Retry      => 3));
 
       if not Success then
          return;
