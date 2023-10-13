@@ -41,6 +41,42 @@ package body BBF.BSL.I2C_Masters is
        of SAM3_I2C_Master_Controller_Access := (others => null);
    --  Controller objects to be used by interrupt handlers.
 
+   procedure Enable_Error_Interrupts
+     (Self : in out SAM3_I2C_Master_Controller'Class);
+
+   procedure Disable_Error_Interrupts
+     (Self : in out SAM3_I2C_Master_Controller'Class);
+
+   ------------------------------
+   -- Disable_Error_Interrupts --
+   ------------------------------
+
+   procedure Disable_Error_Interrupts
+     (Self : in out SAM3_I2C_Master_Controller'Class) is
+   begin
+      BBF.HPL.TWI.Disable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Overrun_Error);
+      BBF.HPL.TWI.Disable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Not_Acknowledge);
+      BBF.HPL.TWI.Disable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Arbitration_Lost);
+   end Disable_Error_Interrupts;
+
+   -----------------------------
+   -- Enable_Error_Interrupts --
+   -----------------------------
+
+   procedure Enable_Error_Interrupts
+     (Self : in out SAM3_I2C_Master_Controller'Class) is
+   begin
+      BBF.HPL.TWI.Enable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Overrun_Error);
+      BBF.HPL.TWI.Enable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Not_Acknowledge);
+      BBF.HPL.TWI.Enable_Interrupt
+        (Self.Controller, BBF.HPL.TWI.Arbitration_Lost);
+   end Enable_Error_Interrupts;
+
    ----------------
    -- Initialize --
    ----------------
@@ -175,12 +211,21 @@ package body BBF.BSL.I2C_Masters is
            (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
          BBF.HPL.TWI.Disable_Interrupt
            (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
+         Self.Disable_Error_Interrupts;
 
          if Self.Current.Operation /= None then
-            --  XXX error need to be checked.
+            if BBF.HPL.TWI.Is_Overrun_Error (Status)
+              or BBF.HPL.TWI.Is_Not_Acknowledge (Status)
+              or BBF.HPL.TWI.Is_Arbitration_Lost (Status)
+            then
+               if Self.Current.On_Error /= null then
+                  Self.Current.On_Error (Self.Current.Closure);
+               end if;
 
-            if Self.Current.On_Success /= null then
-               Self.Current.On_Success (Self.Current.Closure);
+            else
+               if Self.Current.On_Success /= null then
+                  Self.Current.On_Success (Self.Current.Closure);
+               end if;
             end if;
 
             Self.Current := (Operation => None);
@@ -217,6 +262,7 @@ package body BBF.BSL.I2C_Masters is
 
                --  Enable interrupts and transfer
 
+               Self.Enable_Error_Interrupts;
                BBF.HPL.TWI.Enable_Interrupt
                  (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
                BBF.HPL.TWI.Enable_Interrupt

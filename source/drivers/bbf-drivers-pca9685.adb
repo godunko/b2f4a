@@ -104,6 +104,8 @@ package body BBF.Drivers.PCA9685 is
     (Self : PCA9685_Controller'Class) return BBF.I2C.Device_Address;
    --  Returns device address on I2C bus.
 
+   procedure On_Transmit_Done (Closure : System.Address);
+
    ---------------
    -- Configure --
    ---------------
@@ -287,6 +289,15 @@ package body BBF.Drivers.PCA9685 is
       Self.Initialized := True;
    end Initialize;
 
+   ----------------------
+   -- On_Transmit_Done --
+   ----------------------
+
+   procedure On_Transmit_Done (Closure : System.Address) is
+   begin
+      null;
+   end On_Transmit_Done;
+
    -------------------
    -- Set_Something --
    -------------------
@@ -298,8 +309,9 @@ package body BBF.Drivers.PCA9685 is
    is
       use type Interfaces.Unsigned_8;
 
-      Base : constant Interfaces.Unsigned_8 :=
+      Base    : constant Interfaces.Unsigned_8 :=
         Interfaces.Unsigned_8 (Channel) * 4 + LED0_ON_L_Address;
+      Success : Boolean := True;
 
    begin
       Self.Buffer (Channel) :=
@@ -308,7 +320,18 @@ package body BBF.Drivers.PCA9685 is
          LED_OFF_L => (Count => LSB_Count (Value mod 256)),
          LED_OFF_H => (Count => MSB_Count (Value / 256), others => <>));
       Self.Bus.Write_Asynchronous
-        (Self.Device_Address, Base, Self.Buffer (Channel)'Address, 4);
+        (Device     => Self.Device_Address,
+         Register   => Base,
+         Data       => Self.Buffer (Channel)'Address,
+         Length     => 4,
+         On_Success => On_Transmit_Done'Access,
+         On_Error   => On_Transmit_Done'Access,
+         Closure    => Self'Address,
+         Success    => Success);
+
+      if not Success then
+         raise Program_Error;
+      end if;
    end Set_Something;
 
 end BBF.Drivers.PCA9685;
