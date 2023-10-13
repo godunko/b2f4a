@@ -47,6 +47,8 @@ package body BBF.BSL.I2C_Masters is
    procedure Disable_Error_Interrupts
      (Self : in out SAM3_I2C_Master_Controller'Class);
 
+   procedure On_Interrupt (Self : in out SAM3_I2C_Master_Controller'Class);
+
    ------------------------------
    -- Disable_Error_Interrupts --
    ------------------------------
@@ -112,60 +114,13 @@ package body BBF.BSL.I2C_Masters is
       BBF.HPL.NVIC.Enable_Interrupt (Self.Peripheral);
    end Initialize;
 
-   -----------
-   -- Probe --
-   -----------
-
-   overriding function Probe
-    (Self    : in out SAM3_I2C_Master_Controller;
-     Address : BBF.I2C.Device_Address) return Boolean is
-   begin
-      return BBF.HPL.TWI.Probe (Self.Controller, Address);
-   end Probe;
-
-   ----------------------
-   -- Read_Synchronous --
-   ----------------------
-
-   overriding procedure Read_Synchronous
-     (Self             : in out SAM3_I2C_Master_Controller;
-      Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Interfaces.Unsigned_8;
-      Success          : out Boolean) is
-   begin
-      BBF.HPL.TWI.Master_Read_Synchronous
-       (Self.Controller, Address, Internal_Address, Data, Success);
-   end Read_Synchronous;
-
-   ----------------------
-   -- Read_Synchronous --
-   ----------------------
-
-   overriding procedure Read_Synchronous
-     (Self             : in out SAM3_I2C_Master_Controller;
-      Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out BBF.I2C.Unsigned_8_Array;
-      Success          : out Boolean) is
-   begin
-      BBF.HPL.TWI.Master_Read_Synchronous
-       (Self.Controller,
-        Address,
-        Internal_Address,
-        BBF.HPL.TWI.Unsigned_8_Array (Data),
-        Success);
-   end Read_Synchronous;
-
    ------------------
-   -- TWI0_Handler --
+   -- On_Interrupt --
    ------------------
 
-   procedure TWI0_Handler is
+   procedure On_Interrupt (Self : in out SAM3_I2C_Master_Controller'Class) is
       use type Interfaces.Unsigned_16;
 
-      Self   : SAM3_I2C_Master_Controller_Access :=
-        Controller (BBF.HPL.Two_Wire_Interface_0);
       Status : constant BBF.HPL.TWI.TWI_Status :=
         BBF.HPL.TWI.Get_Masked_Status (Self.Controller);
 
@@ -271,6 +226,60 @@ package body BBF.BSL.I2C_Masters is
             end if;
          end if;
       end if;
+   end On_Interrupt;
+
+   -----------
+   -- Probe --
+   -----------
+
+   overriding function Probe
+    (Self    : in out SAM3_I2C_Master_Controller;
+     Address : BBF.I2C.Device_Address) return Boolean is
+   begin
+      return BBF.HPL.TWI.Probe (Self.Controller, Address);
+   end Probe;
+
+   ----------------------
+   -- Read_Synchronous --
+   ----------------------
+
+   overriding procedure Read_Synchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out Interfaces.Unsigned_8;
+      Success          : out Boolean) is
+   begin
+      BBF.HPL.TWI.Master_Read_Synchronous
+       (Self.Controller, Address, Internal_Address, Data, Success);
+   end Read_Synchronous;
+
+   ----------------------
+   -- Read_Synchronous --
+   ----------------------
+
+   overriding procedure Read_Synchronous
+     (Self             : in out SAM3_I2C_Master_Controller;
+      Address          : BBF.I2C.Device_Address;
+      Internal_Address : Interfaces.Unsigned_8;
+      Data             : out BBF.I2C.Unsigned_8_Array;
+      Success          : out Boolean) is
+   begin
+      BBF.HPL.TWI.Master_Read_Synchronous
+       (Self.Controller,
+        Address,
+        Internal_Address,
+        BBF.HPL.TWI.Unsigned_8_Array (Data),
+        Success);
+   end Read_Synchronous;
+
+   ------------------
+   -- TWI0_Handler --
+   ------------------
+
+   procedure TWI0_Handler is
+   begin
+      Controller (BBF.HPL.Two_Wire_Interface_0).On_Interrupt;
    end TWI0_Handler;
 
    ------------------
@@ -279,7 +288,7 @@ package body BBF.BSL.I2C_Masters is
 
    procedure TWI1_Handler is
    begin
-      null;
+      Controller (BBF.HPL.Two_Wire_Interface_1).On_Interrupt;
    end TWI1_Handler;
 
    ------------------------
