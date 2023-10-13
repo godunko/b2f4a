@@ -1,44 +1,16 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
+--                           Bare Board Framework                           --
 --                                                                          --
 --                        Hardware Abstraction Layer                        --
 --                                                                          --
---                        Runtime Library Component                         --
---                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
+
 --  Master mode of I2C bus
 
 pragma Restrictions (No_Elaboration_Code);
@@ -53,12 +25,31 @@ package BBF.I2C.Master is
    type I2C_Master_Controller is limited interface;
 
    not overriding procedure Write_Asynchronous
-     (Self             : in out I2C_Master_Controller;
-      Address          : BBF.I2C.Device_Address;
-      Internal_Address : BBF.I2C.Internal_Address_8;
-      Data             : System.Address;
-      Length           : Interfaces.Unsigned_16) is abstract;
-   --  Write data to the given device asynchronously.
+     (Self       : in out I2C_Master_Controller;
+      Device     : BBF.I2C.Device_Address;
+      Register   : BBF.I2C.Internal_Address_8;
+      Data       : System.Address;
+      Length     : Interfaces.Unsigned_16;
+      On_Success : BBF.Callback;
+      On_Error   : BBF.Callback;
+      Closure    : System.Address;
+      Success    : in out Boolean) is abstract;
+   --  Initiates asynchronous write operation. Given buffer should be available
+   --  till operation ends.
+   --
+   --  @param Self        I2C bus controller
+   --  @param Device      Device address on the bus
+   --  @param Register    Internal address of the device
+   --  @param Data        Pointer to the data to be transmitted
+   --  @param Length      Length of the data
+   --  @param On_Success
+   --    Callback to report successful completion of the operation
+   --  @param On_Error
+   --    Callback to report error condition that stops operation
+   --  @param Closure     Closure data for callbacks
+   --  @param Success
+   --    True when operation has been queued successfully, and False overwise.
+   --    Callbacks are not called when subprogram sets parameter to False.
 
    not overriding function Probe
      (Self    : in out I2C_Master_Controller;

@@ -1,44 +1,15 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
+--                           Bare Board Framework                           --
 --                                                                          --
---                           Board Support Layer                            --
---                                                                          --
---                        Runtime Library Component                         --
+--                        Hardware Abstraction Layer                        --
 --                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 with System.Storage_Elements;
 
@@ -195,11 +166,7 @@ package body BBF.BSL.I2C_Masters is
       --  Transmission completed
 
       if BBF.HPL.TWI.Is_Transmission_Completed (Status) then
-         --  Transmission completed.
-         --
-         --  XXX error need to be checked.
-
-         --  Disable transfer and (all?) interrupts.
+         --  Disable transfer and all interrupts.
 
          BBF.HPL.TWI.Disable_Transmission_Buffer (Self.Controller);
          BBF.HPL.TWI.Disable_Interrupt
@@ -208,6 +175,16 @@ package body BBF.BSL.I2C_Masters is
            (Self.Controller, BBF.HPL.TWI.Transmit_Buffer_Empty);
          BBF.HPL.TWI.Disable_Interrupt
            (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
+
+         if Self.Current.Operation /= None then
+            --  XXX error need to be checked.
+
+            if Self.Current.On_Success /= null then
+               Self.Current.On_Success (Self.Current.Closure);
+            end if;
+
+            Self.Current := (Operation => None);
+         end if;
 
          --  Dequeue next operation and start it when available.
 
@@ -264,22 +241,36 @@ package body BBF.BSL.I2C_Masters is
    ------------------------
 
    procedure Write_Asynchronous
-     (Self             : in out SAM3_I2C_Master_Controller;
-      Address          : BBF.I2C.Device_Address;
-      Internal_Address : BBF.I2C.Internal_Address_8;
-      Data             : System.Address;
-      Length           : Interfaces.Unsigned_16) is
+     (Self       : in out SAM3_I2C_Master_Controller;
+      Device     : BBF.I2C.Device_Address;
+      Register   : BBF.I2C.Internal_Address_8;
+      Data       : System.Address;
+      Length     : Interfaces.Unsigned_16;
+      On_Success : BBF.Callback;
+      On_Error   : BBF.Callback;
+      Closure    : System.Address;
+      Success    : in out Boolean) is
    begin
+      if not Success then
+         return;
+      end if;
+
       --  Enqueue opetation
 
-      if not Operation_Queues.Enqueue
-        (Self.Queue,
-         (Device   => Address,
-          Register => Internal_Address,
-          Data     => Data,
-          Length   => Length))
-      then
-         raise Program_Error;
+      Success :=
+        Operation_Queues.Enqueue
+          (Self.Queue,
+           (Operation  => Write,
+            Device     => Device,
+            Register   => Register,
+            Data       => Data,
+            Length     => Length,
+            On_Success => On_Success,
+            On_Error   => On_Error,
+            Closure    => Closure));
+
+      if not Success then
+         return;
       end if;
 
       --  Enable Transmission_Completed interrupt to start operation if there
