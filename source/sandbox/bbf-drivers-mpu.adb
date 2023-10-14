@@ -143,6 +143,8 @@ package body BBF.Drivers.MPU is
             end;
       end A;
 
+      Data : Raw_Out_Registers renames Self.Data (Self.User_Bank);
+
    begin
       --  Hexapod.Console.Put_Line
       --    ("I2C    ERROR: "
@@ -165,17 +167,17 @@ package body BBF.Drivers.MPU is
         --   & "     "
         ("GA: "
          & Gravitational_Acceleration'Image
-           (A (Self.Data.ACCEL.ACCEL_XOUT_H, Self.Data.ACCEL.ACCEL_XOUT_L))
+           (A (Data.ACCEL.ACCEL_XOUT_H, Data.ACCEL.ACCEL_XOUT_L))
          & " "
          & Gravitational_Acceleration'Image
-           (A (Self.Data.ACCEL.ACCEL_YOUT_H, Self.Data.ACCEL.ACCEL_YOUT_L))
+           (A (Data.ACCEL.ACCEL_YOUT_H, Data.ACCEL.ACCEL_YOUT_L))
          & " "
          & Gravitational_Acceleration'Image
-           (A (Self.Data.ACCEL.ACCEL_ZOUT_H, Self.Data.ACCEL.ACCEL_ZOUT_L)));
+           (A (Data.ACCEL.ACCEL_ZOUT_H, Data.ACCEL.ACCEL_ZOUT_L)));
 
       Hexapod.Console.Put_Line
-        (Interfaces.Integer_8'Image (Self.Data.TEMP.TEMP_OUT_H)
-         & Interfaces.Unsigned_8'Image (Self.Data.TEMP.TEMP_OUT_L));
+        (Interfaces.Integer_8'Image (Data.TEMP.TEMP_OUT_H)
+         & Interfaces.Unsigned_8'Image (Data.TEMP.TEMP_OUT_L));
 
       Hexapod.Console.Put_Line
         ("RV: "
@@ -190,13 +192,13 @@ package body BBF.Drivers.MPU is
       --  Hexapod.Console.Put_Line
       --    (""
          & Rotation_Velosity'Image
-             (A (Self.Data.GYRO.GYRO_XOUT_H, Self.Data.GYRO.GYRO_XOUT_L))
+             (A (Data.GYRO.GYRO_XOUT_H, Data.GYRO.GYRO_XOUT_L))
          & " "
          & Rotation_Velosity'Image
-             (A (Self.Data.GYRO.GYRO_YOUT_H, Self.Data.GYRO.GYRO_YOUT_L))
+             (A (Data.GYRO.GYRO_YOUT_H, Data.GYRO.GYRO_YOUT_L))
          & " "
          & Rotation_Velosity'Image
-             (A (Self.Data.GYRO.GYRO_ZOUT_H, Self.Data.GYRO.GYRO_ZOUT_L))
+             (A (Data.GYRO.GYRO_ZOUT_H, Data.GYRO.GYRO_ZOUT_L))
         );
    end Dump;
 
@@ -401,7 +403,7 @@ package body BBF.Drivers.MPU is
          Self.Bus.Write_Synchronous
            (Self.Device, INT_ENABLE_Address, INT_ENABLE_B, Success);
          Self.Bus.Write_Synchronous
-           (Self.Device, FIFO_EN_Address, INT_ENABLE_B, Success);
+           (Self.Device, FIFO_EN_Address, FIFO_EN_B, Success);
          Self.Bus.Write_Synchronous
            (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
       end;
@@ -426,6 +428,7 @@ package body BBF.Drivers.MPU is
          INT         : constant INT_Registers :=
            (INT_PIN_CFG  =>
               (ACTL             => True,
+               LATCH_INT_EN     => True,
                INT_ANYRD_2CLEAR => True,
                others           => <>),
             INT_ENABLE   =>
@@ -601,11 +604,7 @@ package body BBF.Drivers.MPU is
 
    begin
       if Amount < Size then
-         Hexapod.Console.Put_Line
-           ("FIFO "
-            & Interfaces.Unsigned_16'Image (Amount)
-            & " bytes., expected "
-            & Interfaces.Unsigned_16'Image (Size));
+         --  Not enough data available.
 
          return;
       end if;
@@ -629,11 +628,14 @@ package body BBF.Drivers.MPU is
 
    procedure On_FIFO_Data_Read (Closure : System.Address) is
 
+      use type Interfaces.Unsigned_8;
       use type System.Storage_Elements.Storage_Offset;
 
       Self   : constant Conversions.Object_Pointer :=
         Conversions.To_Pointer (Closure);
       Offset : System.Storage_Elements.Storage_Offset := 0;
+
+      Data   : Raw_Out_Registers renames Self.Data (not Self.User_Bank);
 
    begin
       if Self.Accelerometer_Enabled then
@@ -642,9 +644,12 @@ package body BBF.Drivers.MPU is
               with Import, Address => Self.Buffer'Address + Offset;
 
          begin
-            Self.Data.ACCEL := Aux;
-            Offset          := Offset + 6;
+            Data.ACCEL := Aux;
+            Offset     := Offset + 6;
          end;
+
+      else
+         Data.ACCEL := (others => <>);
       end if;
 
       if Self.Temperature_Enabled then
@@ -653,9 +658,12 @@ package body BBF.Drivers.MPU is
               with Import, Address => Self.Buffer'Address + Offset;
 
          begin
-            Self.Data.TEMP := Aux;
-            Offset         := Offset + 2;
+            Data.TEMP := Aux;
+            Offset    := Offset + 2;
          end;
+
+      else
+         Data.TEMP := (others => <>);
       end if;
 
       if Self.Gyroscope_Enabled then
@@ -664,18 +672,75 @@ package body BBF.Drivers.MPU is
               with Import, Address => Self.Buffer'Address + Offset;
 
          begin
-            Self.Data.GYRO := Aux;
-            Offset         := Offset + 6;
+            Data.GYRO := Aux;
+            Offset    := Offset + 6;
          end;
+
+      else
+         Data.GYRO := (others => <>);
       end if;
+
+      Self.User_Bank := not @;
 
       if Cnt mod 300 = 0 then
          Dump (Self.Buffer (1 .. 14));
       end if;
 
+      if Self.Buffer (1) = 0
+        and Self.Buffer (2) = 0
+        and Self.Buffer (3) = 0
+        and Self.Buffer (4) = 0
+        and Self.Buffer (5) = 0
+        and Self.Buffer (6) = 0
+        and Self.Buffer (7) = 0
+        and Self.Buffer (8) = 0
+      then
+         Hexapod.Console.Put (".");
+      end if;
+
       Cnt  := @ + 1;
       Flag := True;
    end On_FIFO_Data_Read;
+
+   ------------------------
+   -- On_INT_STATUS_Read --
+   ------------------------
+
+   procedure On_INT_STATUS_Read (Closure : System.Address) is
+      Self       : constant Conversions.Object_Pointer :=
+        Conversions.To_Pointer (Closure);
+      INT_STATUS : constant Registers.IN_STATUS_Register
+        with Import, Address => Self.Buffer (1)'Address;
+
+      Success    : Boolean := True;
+
+   begin
+      if INT_STATUS.FIFO_OFLOW_EN then
+         --  FIFO overflow, operations should be shutdown and FIFO is
+         --  restarted.
+         --  XXX Not implemented.
+
+         Hexapod.Console.Put ("F");
+      end if;
+
+      if not INT_STATUS.DATA_RDY_INT then
+         --  Data is not ready
+
+         return;
+      end if;
+
+      --  Initiate load of amount of data available in FIFO.
+
+      Self.Bus.Read_Asynchronous
+        (Device     => Self.Device,
+         Register   => FIFO_COUNT_H_Address,
+         Data       => Self.Buffer (1)'Address,
+         Length     => 2,
+         On_Success => On_FIFO_Count_Read'Access,
+         On_Error   => null,
+         Closure    => Closure,
+         Success    => Success);
+   end On_INT_STATUS_Read;
 
    ------------------
    -- On_Interrupt --
@@ -687,14 +752,20 @@ package body BBF.Drivers.MPU is
       Success : Boolean := True;
 
    begin
-      --  Initiate load of amount of data available in FIFO.
+      --  Initiate read of INT_STATUS register.
+      --
+      --  Unfortunately, read of FIFO_COUNT is not enough: sometimes FIFO_COUNT
+      --  has size of block, but when block is downloaded it contains all zero
+      --  bytes. It is happend when INT_STATUS.DATA_RDY_INT is not set. Thus,
+      --  first read INT_STATUS and continue operation only then DATA_RDY_INT
+      --  is set.
 
       Self.Bus.Read_Asynchronous
         (Device     => Self.Device,
-         Register   => FIFO_COUNT_H_Address,
+         Register   => INT_STATUS_Address,
          Data       => Self.Buffer (1)'Address,
-         Length     => 2,
-         On_Success => On_FIFO_Count_Read'Access,
+         Length     => 1,
+         On_Success => On_INT_STATUS_Read'Access,
          On_Error   => null,
          Closure    => Closure,
          Success    => Success);

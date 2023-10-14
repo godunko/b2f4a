@@ -206,6 +206,22 @@ private
       end record
         with Pack, Object_Size => 8;
 
+      --  INT_STATUS (58/3A)
+
+      type IN_STATUS_Register is record
+         DATA_RDY_INT : Boolean := False;
+         Reserved_1                  : Boolean := False;
+         Reserved_2                  : Boolean := False;
+         I2C_MST_INT_EN_FSYNC_INT_EN : Boolean := False;
+         --  MPU6050: I2C_MST_INT
+         --  MPU6500: FSYNC_INT_EN
+         FIFO_OFLOW_EN               : Boolean := False;
+         Reserved_5                  : Boolean := False;
+         MPU6500_WOM_EN              : Boolean := False;
+         Reserved_7                  : Boolean := False;
+      end record
+        with Pack, Object_Size => 8;
+
       --  SIGNAL_PATH_RESET (104/68)
 
       type SIGNAL_PATH_RESET_Register is record
@@ -296,6 +312,8 @@ private
    INT_PIN_CFG_Address       : constant BBF.I2C.Internal_Address_8 := 16#37#;
    INT_ENABLE_Address        : constant BBF.I2C.Internal_Address_8 := 16#38#;
 
+   INT_STATUS_Address        : constant BBF.I2C.Internal_Address_8 := 16#3A#;
+
    ACCEL_XOUT_H_Address      : constant BBF.I2C.Internal_Address_8 := 16#3B#;
 
    TEMP_OUT_H_Address        : constant BBF.I2C.Internal_Address_8 := 16#41#;
@@ -346,6 +364,8 @@ private
    end record
      with Pack;
 
+   type Raw_Out_Register_Array is array (Boolean) of Raw_Out_Registers;
+
    type Abstract_MPU_Sensor
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
       Device : BBF.I2C.Device_Address)
@@ -356,10 +376,12 @@ private
       Gyroscope_Enabled     : Boolean := False;
       Temperature_Enabled   : Boolean := False;
 
-      Data                  : Raw_Out_Registers := (others => <>);
-   --  Buffer  : BBF.I2C.Unsigned_8_Array
-   --    (1 .. Raw_Out_Registers'Max_Size_In_Storage_Elements)
-   --        with Address => Data'Address;
+      User_Bank             : Boolean := False with Volatile;
+      Data                  : Raw_Out_Register_Array;
+      --  Two banks of collected information: one is used by the user, and
+      --  another one asynchronous read handler. Banks are switched by the
+      --  handler after successful load of new packet of data.
+
       Buffer                : BBF.I2C.Unsigned_8_Array (1 .. 20);
       --  FIFO packet IO buffer, size is enough to store
       --    - accelerometer data (6 bytes)
