@@ -30,10 +30,6 @@ private
 
    type MPU6500_Sensor is new Abstract_MPU_Sensor with null record;
 
-   overriding procedure Internal_Initialize
-     (Self    : in out MPU6500_Sensor;
-      Success : in out Boolean);
-
    overriding function Is_6500_9250
      (Self : MPU6500_Sensor) return Boolean is (True);
 

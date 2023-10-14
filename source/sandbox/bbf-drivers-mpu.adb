@@ -259,7 +259,7 @@ package body BBF.Drivers.MPU is
    procedure Configure
      (Self : in out Abstract_MPU_Sensor'Class)
    is
-      CONFIG : constant CONFIG_Resgisters :=
+      CONFIG   : constant CONFIG_Resgisters :=
         (SMPLRT_DIV     =>
            (SMPLRT_DIV => 1),
            --  MPU6050: Gyro rate is 8k when CONFIG:DLPF_CFG = 0, and
@@ -282,13 +282,17 @@ package body BBF.Drivers.MPU is
          ACCEL_CONFIG_2 =>
            (A_DLPF_CFG     => 1,
             ACCEL_CHOICE_B => False,
+            FIFO_SIZE_1024 => True,
+            --  MPU6500 shares 4kB of memory between the DMP and the FIFO.
+            --  Since the first 3kB are needed by the DMP, we'll use the
+            --  last 1kB for the FIFO.
             others         => False));
          --  This register is available on MPU6500/9250 only. Selected values
          --  run accelerometer at about 180 Hz, like gyro.
       CONFIG_B : constant BBF.I2C.Unsigned_8_Array (1 .. 5)
         with Import, Convention => Ada, Address => CONFIG'Address;
 
-      Success : Boolean := True;
+      Success  : Boolean := True;
 
    begin
       --  Configuration of SMPLRT_DIV is set to lower gyro rate on MPU6050 to

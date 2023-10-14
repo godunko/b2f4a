@@ -125,7 +125,8 @@ private
          ACCEL_CHOICE_B : Boolean                 := False;
          Reserved_4     : Boolean                 := False;
          Reserved_5     : Boolean                 := False;
-         Reserved_6     : Boolean                 := False;
+         FIFO_SIZE_1024 : Boolean                 := False;
+         --  FIFO_SIZE_1024 is not documented.
          Reserved_7     : Boolean                 := False;
       end record
         with Pack, Object_Size => 8;
