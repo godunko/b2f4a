@@ -16,7 +16,7 @@ pragma Restrictions (No_Elaboration_Code);
 
 private with Interfaces;
 
-private with BBF.Delays;
+with BBF.Delays;
 with BBF.I2C.Master;
 
 package BBF.Drivers.MPU is
@@ -29,8 +29,34 @@ package BBF.Drivers.MPU is
       --  Default device address is 16#68#. Sensor can be configured to 16#69#.
        is abstract tagged limited private;
 
+   type Accelerometer_Range_Type is
+     (FSR_2G,
+      FSR_4G,
+      FSR_8G,
+      FSR_16G,
+      Disabled);
+
+   type Gyroscope_Range_Type is
+     (FSR_250DPS,
+      FSR_500DPS,
+      FSR_1000DPS,
+      FSR_2000DPS,
+      Disabled);
+
+   type Sample_Rate_Type is range 4 .. 1_000;
+
    procedure Configure
-     (Self : in out Abstract_MPU_Sensor'Class);
+     (Self                : in out Abstract_MPU_Sensor'Class;
+      Delays              : not null access BBF.Delays.Delay_Controller'Class;
+      Accelerometer_Range : Accelerometer_Range_Type;
+      Gyroscope_Range     : Gyroscope_Range_Type;
+      Temperature         : Boolean;
+      Filter              : Boolean;
+      Sample_Rate         : Sample_Rate_Type;
+      Success             : in out Boolean);
+   --  Rate of the Digital Low Pass Filter is selected automatically depending
+   --  on given sample rate. Filter rate might be 188, 98, 42, 20, 10, or 5 Hz
+   --  and at least two times less than sample rate.
 
    procedure Dump (Self : in out Abstract_MPU_Sensor'Class);
    --  XXX Temporary!
@@ -158,24 +184,32 @@ private
          Stop)
         with Size => 3;
 
-      type TEMP_DIS_PD_PTAT_Type (MPU9250 : Boolean := False) is record
-         case MPU9250 is
-            when False =>
-               TEMP_DIS : Boolean := False;
-
-            when True =>
-               PD_PTAT  : Boolean := False;
-         end case;
-      end record
-        with Unchecked_Union, Pack, Size => 1;
-
       type PWR_MGMT_1_Register is record
-         CLKSEL           : CLKSEL_Type           := Internal;
-         TEMP_DIR_PD_PTAT : TEMP_DIS_PD_PTAT_Type := (False, False);
-         GYRO_STANDBY     : Boolean               := False;
-         CYCLE            : Boolean               := False;
-         SLEEP            : Boolean               := False;
-         DEVICE_RESET     : Boolean               := False;
+         CLKSEL           : CLKSEL_Type := Internal;
+         TEMP_DIS         : Boolean     := False;
+         --  MPU9250 name it as PD_PTAT: Power Disable Proportional To Absolute
+         --  Temperature sensor
+         GYRO_STANDBY     : Boolean     := False;
+         CYCLE            : Boolean     := False;
+         SLEEP            : Boolean     := False;
+         DEVICE_RESET     : Boolean     := False;
+      end record
+        with Pack, Object_Size => 8;
+
+      --  PWR_MGMT_2 (108/6C)
+
+      type LP_WAKE_CTRL_Type is mod 2 ** 2
+        with Size => 2;
+
+      type PWR_MGMT_2_Register is record
+         STBY_ZG      : Boolean := False;
+         STBY_YG      : Boolean := False;
+         STBY_XG      : Boolean := False;
+         STBY_ZA      : Boolean := False;
+         STBY_YA      : Boolean := False;
+         STBY_XA      : Boolean := False;
+         LP_WAKE_CTRL : LP_WAKE_CTRL_Type := 0;
+         --  Not supported by MPU9250
       end record
         with Pack, Object_Size => 8;
 

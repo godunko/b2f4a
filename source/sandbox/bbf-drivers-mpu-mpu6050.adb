@@ -84,8 +84,6 @@ package body BBF.Drivers.MPU.MPU6050 is
       Self.Bus.Write_Synchronous
         --  (Self.Device, INT_ENABLE_Address, 16#01#, Success);
         (Self.Device, INT_ENABLE_Address, Buffer, Success);
-      Self.Bus.Write_Synchronous
-        (Self.Device, PWR_MGMT_2_Address, 16#00#, Success);
    end Internal_Enable_Interrupts;
 
    ----------------
