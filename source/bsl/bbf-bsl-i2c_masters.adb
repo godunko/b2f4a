@@ -275,12 +275,15 @@ package body BBF.BSL.I2C_Masters is
 
          case Self.Current.Operation is
             when Read =>
-               if Self.Current.Length <= 2 then
-                  raise Program_Error;
-               end if;
+               if Self.Current.Length >= 2 then
+                  --  Last two bytes are send by the interrupt handler on
+                  --  Receive Holding Register Ready interrupt.
 
-               BBF.HPL.TWI.Set_Receive_Buffer
-                 (Self.Controller, Self.Current.Data, Self.Current.Length - 2);
+                  BBF.HPL.TWI.Set_Receive_Buffer
+                    (Self.Controller,
+                     Self.Current.Data,
+                     Self.Current.Length - 2);
+               end if;
 
                --  Set read mode, slave address and 3 internal address byte
                --  lengths
@@ -303,16 +306,35 @@ package body BBF.BSL.I2C_Masters is
 
                --  Enable transfer and interrupts
 
-               BBF.HPL.TWI.Enable_Receive_Buffer (Self.Controller);
+               if Self.Current.Length >= 2 then
+                  BBF.HPL.TWI.Enable_Receive_Buffer (Self.Controller);
+                  BBF.HPL.TWI.Enable_Interrupt
+                    (Self.Controller, BBF.HPL.TWI.Receive_Buffer_Full);
+
+               else
+                  BBF.HPL.TWI.Enable_Interrupt
+                    (Self.Controller,
+                     BBF.HPL.TWI.Receive_Holding_Register_Ready);
+               end if;
+
                Self.Enable_Error_Interrupts;
-               BBF.HPL.TWI.Enable_Interrupt
-                 (Self.Controller, BBF.HPL.TWI.Receive_Buffer_Full);
                BBF.HPL.TWI.Enable_Interrupt
                  (Self.Controller, BBF.HPL.TWI.Transmission_Completed);
 
                --  Send a START condition
 
-               Self.Controller.CR := (START => True, others => <>);
+               if Self.Current.Length = 1 then
+                  --  Send both START and STOP conditions.
+
+                  Self.Controller.CR :=
+                    (START => True, STOP => True, others => <>);
+                  Self.Current.Stop  := True;
+
+               else
+                  --  Otherwise, send only START condition.
+
+                  Self.Controller.CR := (START => True, others => <>);
+               end if;
 
             when Write =>
                if Self.Current.Length = 1 then
