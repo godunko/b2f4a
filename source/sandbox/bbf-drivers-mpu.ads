@@ -16,6 +16,7 @@ pragma Restrictions (No_Elaboration_Code);
 
 private with Interfaces;
 
+with BBF.Clocks;
 with BBF.Delays;
 with BBF.I2C.Master;
 
@@ -23,10 +24,19 @@ package BBF.Drivers.MPU is
 
    pragma Preelaborate;
 
+   type Gravitational_Acceleration is
+     delta 1.0 / (2 ** 14) range -16.0 .. 16.0;
+
+   type Angular_Velosity is
+     delta 1.0 / (2 ** 15 * 1000 / 250) range -2_000.0 .. 2_000.0;
+
+   type Temperature is delta 0.001 range -40.0 .. 85.0;
+
    type Abstract_MPU_Sensor
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
-      Device : BBF.I2C.Device_Address)
+      Device : BBF.I2C.Device_Address;
       --  Default device address is 16#68#. Sensor can be configured to 16#69#.
+      Clocks : not null access BBF.Clocks.Real_Time_Clock_Controller'Class)
        is abstract tagged limited private;
 
    type Accelerometer_Range_Type is
@@ -62,11 +72,6 @@ package BBF.Drivers.MPU is
      (Self   : in out Abstract_MPU_Sensor'Class;
       Delays : not null access BBF.Delays.Delay_Controller'Class);
    --  Enables data load from the sensor.
-
-   procedure Dump (Self : in out Abstract_MPU_Sensor'Class);
-   --  XXX Temporary!
-
-   function Get_Flag return Boolean;
 
 private
 
@@ -357,18 +362,20 @@ private
    end record
      with Pack;
 
-   type Raw_Out_Registers is record
-      ACCEL : ACCEL_OUT_Register;
-      TEMP  : TEMP_OUT_Register;
-      GYRO  : GYRO_OUT_Register;
+   type Raw_Data is record
+      ACCEL     : ACCEL_OUT_Register;
+      TEMP      : TEMP_OUT_Register;
+      GYRO      : GYRO_OUT_Register;
+      Timestamp : BBF.Clocks.Time;
    end record
      with Pack;
 
-   type Raw_Out_Register_Array is array (Boolean) of Raw_Out_Registers;
+   type Raw_Data_Array is array (Boolean) of Raw_Data;
 
    type Abstract_MPU_Sensor
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
-      Device : BBF.I2C.Device_Address)
+      Device : BBF.I2C.Device_Address;
+      Clocks : not null access BBF.Clocks.Real_Time_Clock_Controller'Class)
    is abstract tagged limited record
       Initialized           : Boolean := False;
 
@@ -377,7 +384,7 @@ private
       Temperature_Enabled   : Boolean := False;
 
       User_Bank             : Boolean := False with Volatile;
-      Data                  : Raw_Out_Register_Array;
+      Raw_Data              : Raw_Data_Array;
       --  Two banks of collected information: one is used by the user, and
       --  another one asynchronous read handler. Banks are switched by the
       --  handler after successful load of new packet of data.
@@ -400,5 +407,33 @@ private
 
    not overriding function Is_6500_9250
      (Self : Abstract_MPU_Sensor) return Boolean is (raise Program_Error);
+
+   not overriding function To_Temperature
+     (Self : Abstract_MPU_Sensor;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Temperature is
+        (raise Program_Error);
+
+   type Register_16 (Is_Integer : Boolean := False) is record
+      case Is_Integer is
+         when False =>
+            L : Interfaces.Unsigned_8;
+            H : Interfaces.Integer_8;
+
+         when True =>
+            V : Interfaces.Integer_16;
+      end case;
+   end record
+     with Unchecked_Union, Pack, Object_Size => 16;
+
+   function To_Gravitational_Acceleration
+     (Self : Abstract_MPU_Sensor'Class;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Gravitational_Acceleration;
+
+   function To_Angular_Velosity
+     (Self : Abstract_MPU_Sensor'Class;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Angular_Velosity;
 
 end BBF.Drivers.MPU;

@@ -11,14 +11,13 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
+with Ada.Unchecked_Conversion;
 with System.Address_To_Access_Conversions;
 with System.Storage_Elements;
 
 with BBF.Board;
 with BBF.External_Interrupts;
 with BBF.HPL.PMC;  --  XXX Need to be removed.
-
-with Hexapod.Console;
 
 package body BBF.Drivers.MPU is
 
@@ -52,157 +51,6 @@ package body BBF.Drivers.MPU is
    package Conversions is
      new System.Address_To_Access_Conversions
            (Object => Abstract_MPU_Sensor'Class);
-
-   --  BEGIN  --------------------------------------------------------------
-
-   Flag    : Boolean := False with Volatile;
-
-   --  type Gravitational_Acceleration is delta 1.0 / 2 ** 15 range -16.0 .. 16.0;
-   type Gravitational_Acceleration is delta 1.0 / 16_384 range -16.0 .. 16.0;
-
-   type Rotation_Velosity is delta 1.0 / 131_072 range -2_000.0 .. 2_000.0;
-
-   --------------
-   -- Get_Flag --
-   --------------
-
-   function Get_Flag return Boolean is
-   begin
-      return Result : constant Boolean := Flag do
-         Flag := False;
-      end return;
-   end Get_Flag;
-
-   ----------
-   -- Dump --
-   ----------
-
-   procedure Dump (Self : in out Abstract_MPU_Sensor'Class) is
-      Success : Boolean := True;
-
-      --  A_Scale : constant := 2_048;
-      --  R_Scale : constant := 32_768;
-      GA_Precision : constant := 16_384;
-      GA_Scale     : constant := GA_Precision / 2_048;
-      --  G_Precision : constant := 131_072;  --  2^15 / 250 * 1000
-      --  G_Prescale  : constant := 1_000;
-      --  G_Scale     : constant := 8 * 1_000; --  A_Precision / 16.4;
-
-      function A
-        (H : Interfaces.Integer_8;
-         L : Interfaces.Unsigned_8) return Gravitational_Acceleration
-      is
-         use type Interfaces.Integer_32;
-
-         V_Raw        : constant Interfaces.Integer_32 :=
-           Interfaces.Integer_32 (H) * 256 + Interfaces.Integer_32 (L);
-         V_Scaled     : constant Interfaces.Integer_32 := V_Raw * GA_Scale;
-         A_Integral   : constant Gravitational_Acceleration :=
-           Gravitational_Acceleration (V_Scaled / GA_Precision);
-            A_Fractional : constant Gravitational_Acceleration :=
-              Gravitational_Acceleration'Base
-                (V_Scaled mod GA_Precision) * Gravitational_Acceleration'Delta;
-
-      begin
-            return A_Integral + A_Fractional;
-      end A;
-
-      function A
-        (H : Interfaces.Integer_8;
-         L : Interfaces.Unsigned_8) return Rotation_Velosity
-      is
-         use type Interfaces.Integer_64;
-
-         RV_Precision : constant := 131_072;  --  2^15 / 250 * 1000
-         RV_Scale     : constant := 1_000;
-
-         V_Raw        : constant Interfaces.Integer_64 :=
-           Interfaces.Integer_64 (H) * 256 + Interfaces.Integer_64 (L);
-         V_Scaled     : constant Interfaces.Integer_64 := V_Raw * RV_Scale;
-         --  V_Scaled     : constant Interfaces.Integer_32 := V_Raw * G_Scale;
-         A_Integral   : constant Rotation_Velosity :=
-           Rotation_Velosity (V_Scaled / RV_Precision);
-         --  A_Integral   : constant Rotation_Velosity :=
-         --    Rotation_Velosity (V_Scaled / G_Precision);
-         --    --  Rotation_Velosity ((V_Scaled / G_Precision) / G_Prescale);
-
-      begin
-         --  Hexapod.Console.New_Line;
-         --  Hexapod.Console.Put (Interfaces.Integer_64'Image (V_Scaled));
-         --  Hexapod.Console.Put (Rotation_Velosity'Image (A_Integral));
-         --  Hexapod.Console.Put
-         --    (Interfaces.Integer_64'Image (V_Scaled mod GA_Precision));
-
-         declare
-         A_Fractional : constant Rotation_Velosity :=
-           Rotation_Velosity'Base
-             (Long_Float (V_Scaled mod RV_Precision) * Long_Float (Rotation_Velosity'Delta));
-         --      --  ((V_Scaled mod G_Precision) / G_Prescale) * Rotation_Velosity'Delta;
-      begin
-            return A_Integral + A_Fractional;
-            end;
-      end A;
-
-      Data : Raw_Out_Registers renames Self.Data (Self.User_Bank);
-
-   begin
-      --  Hexapod.Console.Put_Line
-      --    ("I2C    ERROR: "
-      --     & Integer'Image (Fail_Read_Counter)
-      --     & "   ENQUEUE: "
-      --     & Integer'Image (Enqueue_Read_Counter)
-      --     & "   DONE: "
-      --     & Integer'Image (Success_Read_Counter)
-      --    );
-
-      Hexapod.Console.Put_Line
-        --  (Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_XOUT_H)
-        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_XOUT_L)
-        --   & "   "
-        --   & Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_YOUT_H)
-        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_YOUT_L)
-        --   & "   "
-        --   & Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_YOUT_H)
-        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_YOUT_L)
-        --   & "     "
-        ("GA: "
-         & Gravitational_Acceleration'Image
-           (A (Data.ACCEL.ACCEL_XOUT_H, Data.ACCEL.ACCEL_XOUT_L))
-         & " "
-         & Gravitational_Acceleration'Image
-           (A (Data.ACCEL.ACCEL_YOUT_H, Data.ACCEL.ACCEL_YOUT_L))
-         & " "
-         & Gravitational_Acceleration'Image
-           (A (Data.ACCEL.ACCEL_ZOUT_H, Data.ACCEL.ACCEL_ZOUT_L)));
-
-      Hexapod.Console.Put_Line
-        (Interfaces.Integer_8'Image (Data.TEMP.TEMP_OUT_H)
-         & Interfaces.Unsigned_8'Image (Data.TEMP.TEMP_OUT_L));
-
-      Hexapod.Console.Put_Line
-        ("RV: "
-         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_XOUT_H)
-         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_XOUT_L)
-         --  & "   "
-         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_YOUT_H)
-         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_YOUT_L)
-         --  & "   "
-         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_ZOUT_H)
-         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_ZOUT_L));
-      --  Hexapod.Console.Put_Line
-      --    (""
-         & Rotation_Velosity'Image
-             (A (Data.GYRO.GYRO_XOUT_H, Data.GYRO.GYRO_XOUT_L))
-         & " "
-         & Rotation_Velosity'Image
-             (A (Data.GYRO.GYRO_YOUT_H, Data.GYRO.GYRO_YOUT_L))
-         & " "
-         & Rotation_Velosity'Image
-             (A (Data.GYRO.GYRO_ZOUT_H, Data.GYRO.GYRO_ZOUT_L))
-        );
-   end Dump;
-
-   --  END ----------------------------------------------------------------
 
    ---------------
    -- Configure --
@@ -350,28 +198,6 @@ package body BBF.Drivers.MPU is
       Self.Temperature_Enabled   := Temperature;
    end Configure;
 
-   ----------
-   -- Dump --
-   ----------
-
-   procedure Dump (Data : BBF.I2C.Unsigned_8_Array) is
-
-      use type Interfaces.Unsigned_8;
-
-      N2H  : constant array (Interfaces.Unsigned_8 range 0 .. 15) of Character :=
-        "0123456789ABCDEF";
-      Line : String (1 .. Data'Length * 3) := (others => ' ');
-
-   begin
-      for J in Data'Range loop
-         Line ((J - Data'First) * 3 + 2 .. (J - Data'First) * 3 + 3) :=
-           (1 => N2H (Data (J) / 16),
-            2 => N2H (Data (J) mod 16));
-      end loop;
-
-      Hexapod.Console.Put_Line (Line);
-   end Dump;
-
    ------------
    -- Enable --
    ------------
@@ -380,7 +206,7 @@ package body BBF.Drivers.MPU is
      (Self   : in out Abstract_MPU_Sensor'Class;
       Delays : not null access BBF.Delays.Delay_Controller'Class)
    is
-      Success     : Boolean := True;
+      Success : Boolean := True;
 
    begin
       --  Disable everything
@@ -624,8 +450,6 @@ package body BBF.Drivers.MPU is
    -- On_FIFO_Data_Read --
    -----------------------
 
-   Cnt : Natural := 0;
-
    procedure On_FIFO_Data_Read (Closure : System.Address) is
 
       use type Interfaces.Unsigned_8;
@@ -635,7 +459,7 @@ package body BBF.Drivers.MPU is
         Conversions.To_Pointer (Closure);
       Offset : System.Storage_Elements.Storage_Offset := 0;
 
-      Data   : Raw_Out_Registers renames Self.Data (not Self.User_Bank);
+      Data   : Raw_Data renames Self.Raw_Data (not Self.User_Bank);
 
    begin
       if Self.Accelerometer_Enabled then
@@ -680,26 +504,8 @@ package body BBF.Drivers.MPU is
          Data.GYRO := (others => <>);
       end if;
 
+      Data.Timestamp := Self.Clocks.Clock;
       Self.User_Bank := not @;
-
-      if Cnt mod 300 = 0 then
-         Dump (Self.Buffer (1 .. 14));
-      end if;
-
-      if Self.Buffer (1) = 0
-        and Self.Buffer (2) = 0
-        and Self.Buffer (3) = 0
-        and Self.Buffer (4) = 0
-        and Self.Buffer (5) = 0
-        and Self.Buffer (6) = 0
-        and Self.Buffer (7) = 0
-        and Self.Buffer (8) = 0
-      then
-         Hexapod.Console.Put (".");
-      end if;
-
-      Cnt  := @ + 1;
-      Flag := True;
    end On_FIFO_Data_Read;
 
    ------------------------
@@ -720,7 +526,7 @@ package body BBF.Drivers.MPU is
          --  restarted.
          --  XXX Not implemented.
 
-         Hexapod.Console.Put ("F");
+         raise Program_Error with "MPU6xxx FIFO OVERFLOW";
       end if;
 
       if not INT_STATUS.DATA_RDY_INT then
@@ -770,5 +576,56 @@ package body BBF.Drivers.MPU is
          Closure    => Closure,
          Success    => Success);
    end On_Interrupt;
+
+   -------------------------
+   -- To_Angular_Velosity --
+   -------------------------
+
+   function To_Angular_Velosity
+     (Self : Abstract_MPU_Sensor'Class;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Angular_Velosity
+   is
+      use type Interfaces.Integer_32;
+
+      function Convert is
+        new Ada.Unchecked_Conversion
+              (Interfaces.Integer_32, Angular_Velosity);
+
+      B : constant Register_16 :=
+        (Is_Integer => False,
+         H          => H,
+         L          => L);
+      V : constant Interfaces.Integer_32 :=
+        Interfaces.Integer_32 (B.V) * 1_000 * 8;
+
+   begin
+      return Convert (V);
+   end To_Angular_Velosity;
+
+   -----------------------------------
+   -- To_Gravitational_Acceleration --
+   -----------------------------------
+
+   function To_Gravitational_Acceleration
+     (Self : Abstract_MPU_Sensor'Class;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Gravitational_Acceleration
+   is
+      use type Interfaces.Integer_32;
+
+      function Convert is
+        new Ada.Unchecked_Conversion
+              (Interfaces.Integer_32, Gravitational_Acceleration);
+
+      B : constant Register_16 :=
+        (Is_Integer => False,
+         H          => H,
+         L          => L);
+      V : constant Interfaces.Integer_32 := Interfaces.Integer_32 (B.V) * 8;
+
+   begin
+      return Convert (V);
+   end To_Gravitational_Acceleration;
 
 end BBF.Drivers.MPU;

@@ -17,6 +17,16 @@ package BBF.Drivers.MPU.MPU6050 is
 
    pragma Preelaborate;
 
+   type Sensor_Data is record
+      Acceleration_X : Gravitational_Acceleration;
+      Acceleration_Y : Gravitational_Acceleration;
+      Acceleration_Z : Gravitational_Acceleration;
+      Velocity_U     : Angular_Velosity;
+      Velocity_V     : Angular_Velosity;
+      Velocity_W     : Angular_Velosity;
+      Temperature    : MPU.Temperature;
+   end record;
+
    type MPU6050_Sensor is new Abstract_MPU_Sensor with private;
 
    not overriding procedure Initialize
@@ -24,11 +34,21 @@ package BBF.Drivers.MPU.MPU6050 is
       Delays  : not null access BBF.Delays.Delay_Controller'Class;
       Success : in out Boolean);
 
+   procedure Get
+     (Self      : MPU6050_Sensor'Class;
+      Data      : out Sensor_Data;
+      Timestamp : out BBF.Clocks.Time);
+
 private
 
    type MPU6050_Sensor is new Abstract_MPU_Sensor with null record;
 
    overriding function Is_6500_9250
      (Self : MPU6050_Sensor) return Boolean is (False);
+
+   overriding function To_Temperature
+     (Self : MPU6050_Sensor;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Temperature;
 
 end BBF.Drivers.MPU.MPU6050;

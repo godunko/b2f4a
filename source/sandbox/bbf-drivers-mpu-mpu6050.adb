@@ -13,6 +13,71 @@ pragma Restrictions (No_Elaboration_Code);
 
 package body BBF.Drivers.MPU.MPU6050 is
 
+   ---------
+   -- Get --
+   ---------
+
+   procedure Get
+     (Self      : MPU6050_Sensor'Class;
+      Data      : out Sensor_Data;
+      Timestamp : out BBF.Clocks.Time)
+   is
+      Raw : Raw_Data renames Self.Raw_Data (Self.User_Bank);
+
+   begin
+      if Self.Accelerometer_Enabled then
+         Data.Acceleration_X :=
+           Self.To_Gravitational_Acceleration
+             (Raw.ACCEL.ACCEL_XOUT_H, Raw.ACCEL.ACCEL_XOUT_L);
+         Data.Acceleration_Y :=
+           Self.To_Gravitational_Acceleration
+             (Raw.ACCEL.ACCEL_YOUT_H, Raw.ACCEL.ACCEL_YOUT_L);
+         Data.Acceleration_Z :=
+           Self.To_Gravitational_Acceleration
+             (Raw.ACCEL.ACCEL_ZOUT_H, Raw.ACCEL.ACCEL_ZOUT_L);
+
+      else
+         Data.Acceleration_X := 0.0;
+         Data.Acceleration_Y := 0.0;
+         Data.Acceleration_Z := 0.0;
+      end if;
+
+      if Self.Temperature_Enabled then
+         Data.Temperature :=
+           Self.To_Temperature (Raw.TEMP.TEMP_OUT_H, Raw.TEMP.TEMP_OUT_L);
+
+      else
+         Data.Temperature := 0.0;
+      end if;
+
+      if Self.Gyroscope_Enabled then
+         Data.Velocity_U :=
+           Self.To_Angular_Velosity
+             (Raw.GYRO.GYRO_XOUT_H, Raw.GYRO.GYRO_XOUT_L);
+         Data.Velocity_V :=
+           Self.To_Angular_Velosity
+             (Raw.GYRO.GYRO_YOUT_H, Raw.GYRO.GYRO_YOUT_L);
+         Data.Velocity_W :=
+           Self.To_Angular_Velosity
+             (Raw.GYRO.GYRO_ZOUT_H, Raw.GYRO.GYRO_ZOUT_L);
+
+      else
+         Data.Velocity_U := 0.0;
+         Data.Velocity_V := 0.0;
+         Data.Velocity_W := 0.0;
+      end if;
+
+      if Self.Accelerometer_Enabled
+        or Self.Temperature_Enabled
+        or Self.Gyroscope_Enabled
+      then
+         Timestamp := Raw.Timestamp;
+
+      else
+         Timestamp := 0.0;
+      end if;
+   end Get;
+
    ----------------
    -- Initialize --
    ----------------
@@ -24,5 +89,20 @@ package body BBF.Drivers.MPU.MPU6050 is
    begin
       Self.Internal_Initialize (Delays, MPU6050_WHOAMI, Success);
    end Initialize;
+
+   --------------------
+   -- To_Temperature --
+   --------------------
+
+   overriding function To_Temperature
+     (Self : MPU6050_Sensor;
+      H    : Interfaces.Integer_8;
+      L    : Interfaces.Unsigned_8) return Temperature
+   is
+      V : constant Register_16 := (Is_Integer => False, H => H, L => L);
+
+   begin
+      return Temperature (Float (V.V) / 340.0 + 36.53);
+   end To_Temperature;
 
 end BBF.Drivers.MPU.MPU6050;
