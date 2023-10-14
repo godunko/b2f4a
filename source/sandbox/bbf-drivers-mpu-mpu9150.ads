@@ -13,6 +13,7 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
+with BBF.Delays;
 with BBF.Drivers.MPU.MPU6050;
 
 package BBF.Drivers.MPU.MPU9150 is

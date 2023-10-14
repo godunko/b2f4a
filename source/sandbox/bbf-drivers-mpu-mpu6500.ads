@@ -13,6 +13,8 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
+with BBF.Delays;
+
 package BBF.Drivers.MPU.MPU6500 is
 
    pragma Preelaborate;
@@ -25,26 +27,6 @@ package BBF.Drivers.MPU.MPU6500 is
       Success : in out Boolean);
 
 private
-
-   type MPU_6500_CLKSEL_Type is
-     (Internal,
-      PLL_Auto_1,
-      PLL_Auto_2,
-      PLL_Auto_3,
-      PLL_Auto_4,
-      PLL_Auto_5,
-      Internal_20_M,
-      Stop)
-     with Size => 3;
-   for MPU_6500_CLKSEL_Type use
-     (Internal      => 0,
-      PLL_Auto_1    => 1,
-      PLL_Auto_2    => 2,
-      PLL_Auto_3    => 3,
-      PLL_Auto_4    => 4,
-      PLL_Auto_5    => 5,
-      Internal_20_M => 6,
-      Stop          => 7);
 
    type MPU6500_Sensor is new Abstract_MPU_Sensor with null record;
 

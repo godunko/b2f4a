@@ -13,19 +13,7 @@ pragma Restrictions (No_Elaboration_Code);
 
 package body BBF.Drivers.MPU.MPU6500 is
 
-   MPU6500_WHOAMI : constant := 16#70#;
-
    ACCEL_CONFIG_2_Address : constant := 16#1D#;
-
-   type MPU_6500_PWR_MGMT_1_Register is record
-      CLKSEL       : MPU_6500_CLKSEL_Type := Internal;
-      TEMP_DIS     : Boolean              := False;
-      GYRO_STANDBY : Boolean              := False;
-      CYCLE        : Boolean              := False;
-      SLEEP        : Boolean              := False;
-      DEVICE_RESET : Boolean              := False;
-   end record
-     with Pack, Object_Size => 8;
 
    type A_DLPF_CFG_Type is mod 2**3;
 
@@ -48,51 +36,13 @@ package body BBF.Drivers.MPU.MPU6500 is
       Delays  : not null access BBF.Delays.Delay_Controller'Class;
       Success : in out Boolean) is
    begin
-      Self.Internal_Probe (MPU6500_WHOAMI, Success);
+      Self.Internal_Initialize (Delays, MPU6500_WHOAMI, Success);
 
       if not Success then
          --  Check may be removed after change convention about Success in I2C.
 
          return;
       end if;
-
-      --  Reset
-
-      declare
-         PWR_MGMT_1 : MPU_6500_PWR_MGMT_1_Register :=
-           (DEVICE_RESET => True,
-            CLKSEL       => Internal,
-            others       => False);
-         Buffer     : Interfaces.Unsigned_8 with Address => PWR_MGMT_1'Address;
-
-      begin
-         Self.Bus.Write_Synchronous
-           (Self.Device, PWR_MGMT_1_Address, Buffer, Success);
-
-         if not Success then
-            return;
-         end if;
-      end;
-
-      Delays.Delay_Milliseconds (100);
-
-      --  Wakeup
-
-      declare
-         PWR_MGMT_1 : MPU_6500_PWR_MGMT_1_Register :=
-           (DEVICE_RESET => False,
-            CLKSEL       => Internal,
-            others       => False);
-         Buffer     : Interfaces.Unsigned_8 with Address => PWR_MGMT_1'Address;
-
-      begin
-         Self.Bus.Write_Synchronous
-           (Self.Device, MPU.PWR_MGMT_1_Address, Buffer, Success);
-
-         if not Success then
-            return;
-         end if;
-      end;
 
       --  Initialize common data structures and defaults.
 

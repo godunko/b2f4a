@@ -16,7 +16,7 @@ pragma Restrictions (No_Elaboration_Code);
 
 private with Interfaces;
 
---  with BBF.Delays;
+private with BBF.Delays;
 with BBF.I2C.Master;
 
 package BBF.Drivers.MPU is
@@ -130,19 +130,74 @@ private
       end record
         with Pack, Object_Size => 8;
 
+      --  SIGNAL_PATH_RESET (104/68)
+
+      type SIGNAL_PATH_RESET_Register is record
+         TEMP_Reset  : Boolean := False;
+         ACCEL_Reset : Boolean := False;
+         GYRO_Reset  : Boolean := False;
+         Reserved_3  : Boolean := False;
+         Reserved_4  : Boolean := False;
+         Reserved_5  : Boolean := False;
+         Reserved_6  : Boolean := False;
+         Reserved_7  : Boolean := False;
+      end record
+        with Pack, Object_Size => 8;
+
+      --  PWR_MGM_1 (107/6B)
+
+      type CLKSEL_Type is    --     MPU6050              MPU6500
+        (Internal,           --  Internal 8MHz        Internal 20MHz
+         PLL_X,              --  PLL X gyro           Internal/PLL auto
+         PLL_Y,              --  PLL Y guro           Internal/PLL auto
+         PLL_Z,              --  PLL Z gyro           Internal/PLL auto
+         PLL_32_768_K,       --  External 32.768kHz   Internal/PLL auto
+         PLL_19_2_M,         --  External 19.2MHz     Internal/PLL auto
+         MPU6500_Internal,   --                       Internal 20MHz
+         Stop)
+        with Size => 3;
+
+      type TEMP_DIS_PD_PTAT_Type (MPU9250 : Boolean := False) is record
+         case MPU9250 is
+            when False =>
+               TEMP_DIS : Boolean := False;
+
+            when True =>
+               PD_PTAT  : Boolean := False;
+         end case;
+      end record
+        with Unchecked_Union, Pack, Size => 1;
+
+      type PWR_MGMT_1_Register is record
+         CLKSEL           : CLKSEL_Type           := Internal;
+         TEMP_DIR_PD_PTAT : TEMP_DIS_PD_PTAT_Type := (False, False);
+         GYRO_STANDBY     : Boolean               := False;
+         CYCLE            : Boolean               := False;
+         SLEEP            : Boolean               := False;
+         DEVICE_RESET     : Boolean               := False;
+      end record
+        with Pack, Object_Size => 8;
+
    end Registers;
 
-   SMPLRT_DIV_Address   : constant BBF.I2C.Internal_Address_8 := 16#19#;
-   CONFIG_Address       : constant BBF.I2C.Internal_Address_8 := 16#1A#;
-   GYRO_CONFIG_Address  : constant BBF.I2C.Internal_Address_8 := 16#1B#;
-   ACCEL_CONFIG_Address : constant BBF.I2C.Internal_Address_8 := 16#1C#;
-   MPU6500_ACCEL_CONFIG_2_Address :
-                          constant BBF.I2C.Internal_Address_8 := 16#1D#;
+   MPU6050_WHOAMI : constant := 16#68#;
+   MPU6500_WHOAMI : constant := 16#70#;
+   MPU9250_WHOAMI : constant := 16#71#;
 
-   INT_PIN_CFG_Address : constant BBF.I2C.Internal_Address_8 := 16#37#;
-   INT_ENABLE_Address  : constant BBF.I2C.Internal_Address_8 := 16#38#;
-   PWR_MGMT_1_Address  : constant BBF.I2C.Internal_Address_8 := 16#6B#;
-   PWR_MGMT_2_Address  : constant BBF.I2C.Internal_Address_8 := 16#6C#;
+   SMPLRT_DIV_Address        : constant BBF.I2C.Internal_Address_8 := 16#19#;
+   CONFIG_Address            : constant BBF.I2C.Internal_Address_8 := 16#1A#;
+   GYRO_CONFIG_Address       : constant BBF.I2C.Internal_Address_8 := 16#1B#;
+   ACCEL_CONFIG_Address      : constant BBF.I2C.Internal_Address_8 := 16#1C#;
+   MPU6500_ACCEL_CONFIG_2_Address :
+                               constant BBF.I2C.Internal_Address_8 := 16#1D#;
+
+   INT_PIN_CFG_Address       : constant BBF.I2C.Internal_Address_8 := 16#37#;
+   INT_ENABLE_Address        : constant BBF.I2C.Internal_Address_8 := 16#38#;
+
+   SIGNAL_PATH_RESET_Address : constant BBF.I2C.Internal_Address_8 := 16#68#;
+
+   PWR_MGMT_1_Address        : constant BBF.I2C.Internal_Address_8 := 16#6B#;
+   PWR_MGMT_2_Address        : constant BBF.I2C.Internal_Address_8 := 16#6C#;
 
    type ACCEL_OUT_Register is record
       ACCEL_XOUT_H : Interfaces.Integer_8  := 0;
@@ -189,8 +244,9 @@ private
    --
    end record;
 
-   procedure Internal_Probe
+   procedure Internal_Initialize
      (Self    : in out Abstract_MPU_Sensor'Class;
+      Delays  : not null access BBF.Delays.Delay_Controller'Class;
       WHOAMI  : Interfaces.Unsigned_8;
       Success : in out Boolean);
    --  First step of the initialization procedure. Probe controller and check

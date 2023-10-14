@@ -20,8 +20,6 @@ package body BBF.Drivers.MPU.MPU6050 is
 
    --  AK8975_Address : constant BBF.I2C.Device_Address := 16#0C#;
 
-   MPU6050_WHOAMI : constant := 16#68#;
-
    type INT_PIN_CFG_Register is record
       Reserved_0        : Boolean := False;
       BYPASS_EN         : Boolean := False;
@@ -53,28 +51,6 @@ package body BBF.Drivers.MPU.MPU6050 is
       Reserved_5     : Boolean := False;
       Reserved_6     : Boolean := False;
       Reserved_7     : Boolean := False;
-   end record
-     with Pack, Object_Size => 8;
-
-   type MPU6050_CLKSEL_Type is
-     (Internal, PLL_X, PLL_Y, PLL_Z, PLL_32_768_K, PLL_19_2_M, Stop)
-     with Size => 3;
-   for MPU6050_CLKSEL_Type use
-     (Internal     => 0,
-      PLL_X        => 1,
-      PLL_Y        => 2,
-      PLL_Z        => 3,
-      PLL_32_768_K => 4,
-      PLL_19_2_M   => 5,
-      Stop         => 7);
-
-   type MPU6050_PWR_MGMT_1_Register is record
-      CLKSEL       : MPU6050_CLKSEL_Type := Internal;
-      TEMP_DIS     : Boolean             := False;
-      Reserved     : Boolean             := False;
-      CYCLE        : Boolean             := False;
-      SLEEP        : Boolean             := False;
-      DEVICE_RESET : Boolean             := False;
    end record
      with Pack, Object_Size => 8;
 
@@ -121,56 +97,7 @@ package body BBF.Drivers.MPU.MPU6050 is
       Delays  : not null access BBF.Delays.Delay_Controller'Class;
       Success : in out Boolean) is
    begin
-      Self.Internal_Probe (MPU6050_WHOAMI, Success);
-
-      if not Success then
-         --  Check may be removed after change convention about Success in I2C.
-
-         return;
-      end if;
-
-      --  Reset
-
-      declare
-         PWR_MGMT_1 : MPU6050_PWR_MGMT_1_Register :=
-           (DEVICE_RESET => True,
-            CLKSEL       => Internal,
-            others       => False);
-         Buffer     : Interfaces.Unsigned_8 with Address => PWR_MGMT_1'Address;
-
-      begin
-         Self.Bus.Write_Synchronous
-           (Self.Device, MPU.PWR_MGMT_1_Address, Buffer, Success);
-
-         if not Success then
-            return;
-         end if;
-      end;
-
-      Delays.Delay_Milliseconds (100);
-
-      --  Wakeup
-
-      declare
-         PWR_MGMT_1 : MPU6050_PWR_MGMT_1_Register :=
-           (DEVICE_RESET => False,
-            CLKSEL       => PLL_X,
-            --  CLKSEL       => Internal,
-            others       => False);
-         Buffer     : Interfaces.Unsigned_8 with Address => PWR_MGMT_1'Address;
-
-      begin
-         if not Success then
-            return;
-         end if;
-
-         Self.Bus.Write_Synchronous
-           (Self.Device, MPU.PWR_MGMT_1_Address, Buffer, Success);
-      end;
-
-      --  Initialize common data structures and defaults.
-
-      Self.Internal_Initialize (Success);
+      Self.Internal_Initialize (Delays, MPU6050_WHOAMI, Success);
    end Initialize;
 
 end BBF.Drivers.MPU.MPU6050;

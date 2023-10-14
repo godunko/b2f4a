@@ -252,34 +252,13 @@ package body BBF.Drivers.MPU is
    end record
      with Pack;
 
+   ---------------
+   -- Configure --
+   ---------------
+
    procedure Configure
      (Self : in out Abstract_MPU_Sensor'Class)
    is
-      --  SMPLRT_DIV     : constant Registers.SMPLRT_DIV_Register :=
-      --    (SMPLRT_DIV => 7);
-      --  --  MPU6050: Gyro rate is 8k when CONFIG:DLPF_CFG = 0, and 1k overwise.
-      --  --  MPU6500: Depends from CONFIG:DLPF_CFG and GYRO_CFG:FCHOICE_B,
-      --  --  looks compatible with allowed MPU6050 values.
-      --  CONFIG         : constant Registers.CONFIG_Register :=
-      --    (DLPF_CFG          => 1,
-      --     EXT_SYNC_SET      => Registers.Disabled,
-      --     MPU6500_FIFO_MODE => False,
-      --     others            => False);
-      --  --  Enable DLPF_CFG, rate will be about 180 Hz.
-      --  GYRO_CONFIG    : constant Registers.GYRO_CONFIG_Register :=
-      --    (MPU6500_FCHOICE_B => 0,
-      --     GYRO_FS_SEL       => Registers.G_2000,
-      --     others            => False);
-      --  ACCEL_CONFIG   : constant Registers.ACCEL_CONFIG_Register :=
-      --    (ACCEL_FS_SEL => Registers.A_16,
-      --     others       => False);
-      --  ACCEL_CONFIG_2 : constant Registers.MPU6500_ACCEL_CONFIG_2_Register :=
-      --    (A_DLPF_CFG     => 1,
-      --     ACCEL_CHOICE_B => False,
-      --     others         => False);
-      --  --  This register is available on MPU6500/9250 only. Selected values
-      --  --  run accelerometer at about 180 Hz, like gyro.
-
       CONFIG : constant CONFIG_Resgisters :=
         (SMPLRT_DIV     =>
            (SMPLRT_DIV => 1),
@@ -501,12 +480,13 @@ package body BBF.Drivers.MPU is
       BBF.HPL.PMC.Enable_Peripheral_Clock (BBF.HPL.Parallel_IO_Controller_C);
    end Internal_Initialize;
 
-   --------------------
-   -- Internal_Probe --
-   --------------------
+   -------------------------
+   -- Internal_Initialize --
+   -------------------------
 
-   procedure Internal_Probe
+   procedure Internal_Initialize
      (Self    : in out Abstract_MPU_Sensor'Class;
+      Delays  : not null access BBF.Delays.Delay_Controller'Class;
       WHOAMI  : Interfaces.Unsigned_8;
       Success : in out Boolean)
    is
@@ -531,12 +511,73 @@ package body BBF.Drivers.MPU is
       if not Success then
          return;
 
-      --  elsif Buffer /= WHOAMI then
-      --     Success := False;
-      --
-      --     return;
+      elsif Buffer /= WHOAMI then
+         Success := False;
+
+         return;
       end if;
-   end Internal_Probe;
+
+      --  Device reset
+
+      declare
+         PWR_MGMT_1   : constant Registers.PWR_MGMT_1_Register :=
+           (DEVICE_RESET => True,
+            CLKSEL       => Registers.Internal,
+            others       => <>);
+         PWR_MGMT_1_B : Interfaces.Unsigned_8
+           with Address => PWR_MGMT_1'Address;
+
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device, PWR_MGMT_1_Address, PWR_MGMT_1_B, Success);
+
+         if not Success then
+            return;
+         end if;
+      end;
+
+      Delays.Delay_Milliseconds (100);
+
+      --  Signal path reset
+
+      declare
+         SIGNAL_PATH_RESET   : Registers.SIGNAL_PATH_RESET_Register :=
+           (TEMP_Reset  => True,
+            ACCEL_Reset => True,
+            GYRO_Reset  => True,
+            others      => <>);
+         SIGNAL_PATH_RESET_B : Interfaces.Unsigned_8
+           with Address => SIGNAL_PATH_RESET'Address;
+
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device,
+            SIGNAL_PATH_RESET_Address,
+            SIGNAL_PATH_RESET_B,
+            Success);
+
+         if not Success then
+            return;
+         end if;
+      end;
+
+      Delays.Delay_Milliseconds (100);
+
+      --  Wakeup
+
+      declare
+         PWR_MGMT_1   : Registers.PWR_MGMT_1_Register :=
+           (SLEEP  => False,
+            CLKSEL => Registers.Internal,
+            others => <>);
+         PWR_MGMT_1_B : Interfaces.Unsigned_8
+           with Address => PWR_MGMT_1'Address;
+
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device, PWR_MGMT_1_Address, PWR_MGMT_1_B, Success);
+      end;
+   end Internal_Initialize;
 
 --     ----------------
 --     -- Initialize --
