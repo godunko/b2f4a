@@ -58,6 +58,11 @@ package BBF.Drivers.MPU is
    --  on given sample rate. Filter rate might be 188, 98, 42, 20, 10, or 5 Hz
    --  and at least two times less than sample rate.
 
+   procedure Enable
+     (Self   : in out Abstract_MPU_Sensor'Class;
+      Delays : not null access BBF.Delays.Delay_Controller'Class);
+   --  Enables data load from the sensor.
+
    procedure Dump (Self : in out Abstract_MPU_Sensor'Class);
    --  XXX Temporary!
 
@@ -157,6 +162,50 @@ private
       end record
         with Pack, Object_Size => 8;
 
+      --  FIFO_EN (35/23)
+
+      type FIFO_EN_Register is record
+         SLV0_FIFO_EN  : Boolean := False;
+         SLV1_FIFO_EN  : Boolean := False;
+         SLV2_FIFO_EN  : Boolean := False;
+         ACCEL_FIFO_EN : Boolean := False;
+         ZG_FIFO_EN    : Boolean := False;
+         YG_FIFO_EN    : Boolean := False;
+         XG_FIFO_EN    : Boolean := False;
+         TEMP_FIFO_EN  : Boolean := False;
+      end record
+        with Pack, Object_Size => 8;
+
+      --  INT_PIN_CFG (55/37)
+
+      type INT_PIN_CFG_Register is record
+         Reserved_0        : Boolean := False;
+         I2C_BYPASS_EN     : Boolean := False;
+         FSYNC_INT_MODE_EN : Boolean := False;
+         ACTL_FSYNC        : Boolean := False;
+         INT_ANYRD_2CLEAR  : Boolean := False;
+         LATCH_INT_EN      : Boolean := False;
+         OPEN              : Boolean := False;
+         ACTL              : Boolean := False;
+      end record
+        with Pack, Object_Size => 8;
+
+      --  INT_ENABLE (56/38)
+
+      type INT_ENABLE_Register is record
+         RAW_RDY_EN                  : Boolean := False;
+         Reserved_1                  : Boolean := False;
+         Reserved_2                  : Boolean := False;
+         I2C_MST_INT_EN_FSYNC_INT_EN : Boolean := False;
+         --  MPU6050: I2C_MST_INT
+         --  MPU6500: FSYNC_INT_EN
+         FIFO_OFLOW_EN               : Boolean := False;
+         Reserved_5                  : Boolean := False;
+         MPU6500_WOM_EN              : Boolean := False;
+         Reserved_7                  : Boolean := False;
+      end record
+        with Pack, Object_Size => 8;
+
       --  SIGNAL_PATH_RESET (104/68)
 
       type SIGNAL_PATH_RESET_Register is record
@@ -168,6 +217,20 @@ private
          Reserved_5  : Boolean := False;
          Reserved_6  : Boolean := False;
          Reserved_7  : Boolean := False;
+      end record
+        with Pack, Object_Size => 8;
+
+      --  USER_CTRL (106/6A)
+
+      type USER_CTRL_Register is record
+         SIG_COND_RESET : Boolean := False;
+         I2C_MST_RESET  : Boolean := False;
+         FIFO_RESET     : Boolean := False;
+         Reserved_3     : Boolean := False;
+         I2C_IF_DIS     : Boolean := False;
+         I2C_MST_EN     : Boolean := False;
+         FIFO_EN        : Boolean := False;
+         Reserved_7     : Boolean := False;
       end record
         with Pack, Object_Size => 8;
 
@@ -215,6 +278,8 @@ private
 
    end Registers;
 
+   --  AK8975_Address : constant BBF.I2C.Device_Address := 16#0C#;
+
    MPU6050_WHOAMI : constant := 16#68#;
    MPU6500_WHOAMI : constant := 16#70#;
    MPU9250_WHOAMI : constant := 16#71#;
@@ -226,13 +291,27 @@ private
    MPU6500_ACCEL_CONFIG_2_Address :
                                constant BBF.I2C.Internal_Address_8 := 16#1D#;
 
+   FIFO_EN_Address           : constant BBF.I2C.Internal_Address_8 := 16#23#;
+
    INT_PIN_CFG_Address       : constant BBF.I2C.Internal_Address_8 := 16#37#;
    INT_ENABLE_Address        : constant BBF.I2C.Internal_Address_8 := 16#38#;
 
+   ACCEL_XOUT_H_Address      : constant BBF.I2C.Internal_Address_8 := 16#3B#;
+
+   TEMP_OUT_H_Address        : constant BBF.I2C.Internal_Address_8 := 16#41#;
+
+   GYRO_XOUT_H_Address       : constant BBF.I2C.Internal_Address_8 := 16#43#;
+
    SIGNAL_PATH_RESET_Address : constant BBF.I2C.Internal_Address_8 := 16#68#;
 
+   USER_CTRL_Address         : constant BBF.I2C.Internal_Address_8 := 16#6A#;
    PWR_MGMT_1_Address        : constant BBF.I2C.Internal_Address_8 := 16#6B#;
    PWR_MGMT_2_Address        : constant BBF.I2C.Internal_Address_8 := 16#6C#;
+
+   FIFO_COUNT_H_Address      : constant BBF.I2C.Internal_Address_8 := 16#72#;
+   FIFO_COUNT_L_Address      : constant BBF.I2C.Internal_Address_8 := 16#73#;
+   FIFO_R_W_Address          : constant BBF.I2C.Internal_Address_8 := 16#74#;
+   WHO_AM_I_Address          : constant BBF.I2C.Internal_Address_8 := 16#75#;
 
    type ACCEL_OUT_Register is record
       ACCEL_XOUT_H : Interfaces.Integer_8  := 0;
@@ -271,12 +350,22 @@ private
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
       Device : BBF.I2C.Device_Address)
    is abstract tagged limited record
-      Initialized : Boolean := False;
-      Data        : Raw_Out_Registers := (others => <>);
+      Initialized           : Boolean := False;
+
+      Accelerometer_Enabled : Boolean := False;
+      Gyroscope_Enabled     : Boolean := False;
+      Temperature_Enabled   : Boolean := False;
+
+      Data                  : Raw_Out_Registers := (others => <>);
    --  Buffer  : BBF.I2C.Unsigned_8_Array
    --    (1 .. Raw_Out_Registers'Max_Size_In_Storage_Elements)
    --        with Address => Data'Address;
-   --
+      Buffer                : BBF.I2C.Unsigned_8_Array (1 .. 20);
+      --  FIFO packet IO buffer, size is enough to store
+      --    - accelerometer data (6 bytes)
+      --    - temperature data (2 bytes)
+      --    - gyroscope data (6 bytes)
+      --    - magnitometer data (6 bytes)
    end record;
 
    procedure Internal_Initialize
@@ -286,17 +375,6 @@ private
       Success : in out Boolean);
    --  First step of the initialization procedure. Probe controller and check
    --  chip identifier.
-
-   not overriding procedure Internal_Initialize
-     (Self    : in out Abstract_MPU_Sensor;
-      Success : in out Boolean);
-   --  Second step of the initialization procedure. Setup defaults.
-
-   not overriding procedure Internal_Enable_Interrupts
-     (Self    : in out Abstract_MPU_Sensor;
-      Success : in out Boolean);
-   --  Enable interrupts. Depending of the mode, DMP or data ready interrupt is
-   --  enabled.
 
    not overriding function Is_6500_9250
      (Self : Abstract_MPU_Sensor) return Boolean is (raise Program_Error);

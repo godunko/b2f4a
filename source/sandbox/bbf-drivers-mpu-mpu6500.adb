@@ -23,16 +23,6 @@ package body BBF.Drivers.MPU.MPU6500 is
       Success : in out Boolean) is
    begin
       Self.Internal_Initialize (Delays, MPU6500_WHOAMI, Success);
-
-      if not Success then
-         --  Check may be removed after change convention about Success in I2C.
-
-         return;
-      end if;
-
-      --  Initialize common data structures and defaults.
-
-      Self.Internal_Initialize (Success);
    end Initialize;
 
 end BBF.Drivers.MPU.MPU6500;

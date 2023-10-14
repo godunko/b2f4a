@@ -12,235 +12,15 @@
 pragma Restrictions (No_Elaboration_Code);
 
 with System.Address_To_Access_Conversions;
+with System.Storage_Elements;
 
 with BBF.Board;
 with BBF.External_Interrupts;
-with BBF.HPL.PMC;
-with BBF.GPIO;
+with BBF.HPL.PMC;  --  XXX Need to be removed.
 
 with Hexapod.Console;
-with BBF.BSL.I2C_Masters;
 
 package body BBF.Drivers.MPU is
-
-   ACCEL_XOUT_H_Address : constant BBF.I2C.Internal_Address_8 := 16#3B#;
-   TEMP_OUT_H_Address   : constant BBF.I2C.Internal_Address_8 := 16#41#;
-   GYRO_XOUT_H_Address  : constant BBF.I2C.Internal_Address_8 := 16#43#;
-   WHO_AM_I_Address     : constant BBF.I2C.Internal_Address_8 := 16#75#;
-
-   --  type Acceleration is delta 0.000_01 range -16.0 .. 16.0;
-   --  type Gravitational_Acceleration is delta 1.0 / 2 ** 15 range -16.0 .. 16.0;
-   type Gravitational_Acceleration is delta 1.0 / 16_384 range -16.0 .. 16.0;
-
-   type Rotation_Velosity is delta 1.0 / 131_072 range -2_000.0 .. 2_000.0;
-
-   Enabled : Boolean := False;
-   Flag    : Boolean := False with Volatile;
-   Fail_Read_Counter : Natural := 0;
-   Success_Read_Counter : Natural := 0;
-   Enqueue_Read_Counter : Natural := 0;
-
---     type Abstract_MPU_Sensor_Access is
---       access all Abstract_MPU_Sensor'Class;
-
-   package Conversions is
-     new System.Address_To_Access_Conversions
-           (Object => Abstract_MPU_Sensor'Class);
-
-   procedure On_Read (Closure : System.Address);
-
-   procedure On_Error (Closure : System.Address);
-
-   function Get_Flag return Boolean is
-   begin
-      return Result : constant Boolean := Flag do
-         Flag := False;
-      end return;
-   end Get_Flag;
-
-   Reported : Boolean := False;
-   Fill_Step : Boolean := False;
-
-   procedure Handler (Closure : System.Address) is
-      use type Interfaces.Integer_8;
-
-      Self    : constant Conversions.Object_Pointer :=
-        Conversions.To_Pointer (Closure);
-      --  Self    : Abstract_MPU_Sensor'Class
-      --    with Import, Convention => Ada, Address => Closure;
-      Success : Boolean := True;
-
-   begin
-      if Fill_Step then
-         Self.Data := ((0, 0, 0, 0, 0, 0), (0, 0), (0, 0, 0, 0, 0, 0));
-
-      else
-         Self.Data :=
-           ((-1, 255, -1, 255, -1, 255), (-1, 255), (-1, 255, -1, 255, -1, 255));
-      end if;
-
-      Fill_Step := not @;
-
-      Self.Bus.Read_Asynchronous
-        (Device     => Self.Device,
-         Register   => ACCEL_XOUT_H_Address,
-         Data       => Self.Data'Address,
-         Length     => 14,
-         On_Success => On_Read'Access,
-         On_Error   => On_Error'Access,
-         Closure    => Closure,
-         Success    => Success);
-
-      if not Success then
-         Enqueue_Read_Counter := @ + 1;
-
-         if not Reported then
-            Reported := True;
-
-            Hexapod.Console.Put_Line
-              ("Async read enqueue failed, operation "
-               & Natural'Image (Enqueue_Read_Counter)
-               & " completed "
-               & Natural'Image
-                   (Success_Read_Counter + Fail_Read_Counter));
-
-            --  Hexapod.Console.Put_Line
-            --    (Interfaces.Integer_8'Image (Self.Data.ACCEL.ACCEL_XOUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.ACCEL.ACCEL_XOUT_L)
-            --     & Interfaces.Integer_8'Image (Self.Data.ACCEL.ACCEL_YOUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.ACCEL.ACCEL_YOUT_L)
-            --     & Interfaces.Integer_8'Image (Self.Data.ACCEL.ACCEL_ZOUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.ACCEL.ACCEL_ZOUT_L)
-            --     & "   "
-            --     & Interfaces.Integer_8'Image (Self.Data.TEMP.TEMP_OUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.TEMP.TEMP_OUT_L)
-            --     & "   "
-            --     & Interfaces.Integer_8'Image (Self.Data.GYRO.GYRO_XOUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.GYRO.GYRO_XOUT_L)
-            --     & Interfaces.Integer_8'Image (Self.Data.GYRO.GYRO_YOUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.GYRO.GYRO_YOUT_L)
-            --     & Interfaces.Integer_8'Image (Self.Data.GYRO.GYRO_ZOUT_H)
-            --     & Interfaces.Unsigned_8'Image (Self.Data.GYRO.GYRO_ZOUT_L));
-         end if;
-         --  raise Program_Error;
-      end if;
-   end Handler;
-
-   procedure On_Error (Closure : System.Address) is
-   begin
-      Fail_Read_Counter := @ + 1;
-      Hexapod.Console.Put_Line
-        ("I2C    ERROR: "
-         & Integer'Image (Fail_Read_Counter)
-         & "   ENQUEUE: "
-         & Integer'Image (Enqueue_Read_Counter)
-         & "   DONE: "
-         & Integer'Image (Success_Read_Counter)
-        );
-      --  Hexapod.Console.Put_Line
-      --    ("ERROR : "
-      --     & Interfaces.Unsigned_32'Image (S)
-      --     & "   SUCCESSFUL READS: "
-      --     & Integer'Image (Success_Read_Counter));
-   end On_Error;
-
-   procedure On_Read (Closure : System.Address) is
-      Self : constant Conversions.Object_Pointer :=
-        Conversions.To_Pointer (Closure);
-
-   begin
-      Flag := True;
-      Success_Read_Counter := @ + 1;
-      --  Hexapod.Console.Put_Line
-      --    ("DONE, STATUS: "
-      --     & Interfaces.Unsigned_32'Image (S)
-      --     & "   FAIL: "
-      --     & Integer'Image (Fail_Read_Counter)
-      --     & "   SUCCESS: "
-      --     & Integer'Image (Success_Read_Counter)
-      --     & "   TOTAL: "
-      --     & Integer'Image (Enqueue_Read_Counter)
-      --    );
-      --  Hexapod.Console.Put_Line
-      --    (Interfaces.Integer_8'Image (Self.Data.ACCEL.ACCEL_XOUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.ACCEL.ACCEL_XOUT_L)
-      --     & Interfaces.Integer_8'Image (Self.Data.ACCEL.ACCEL_YOUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.ACCEL.ACCEL_YOUT_L)
-      --     & Interfaces.Integer_8'Image (Self.Data.ACCEL.ACCEL_ZOUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.ACCEL.ACCEL_ZOUT_L)
-      --     & "   "
-      --     & Interfaces.Integer_8'Image (Self.Data.TEMP.TEMP_OUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.TEMP.TEMP_OUT_L)
-      --     & "   "
-      --     & Interfaces.Integer_8'Image (Self.Data.GYRO.GYRO_XOUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.GYRO.GYRO_XOUT_L)
-      --     & Interfaces.Integer_8'Image (Self.Data.GYRO.GYRO_YOUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.GYRO.GYRO_YOUT_L)
-      --     & Interfaces.Integer_8'Image (Self.Data.GYRO.GYRO_ZOUT_H)
-      --     & Interfaces.Unsigned_8'Image (Self.Data.GYRO.GYRO_ZOUT_L));
-   end On_Read;
-
-   procedure Enable (Self : in out Abstract_MPU_Sensor'Class) is
-      Success : Boolean := True;
-
-   begin
-      if Enabled then
-         return;
-      end if;
-
-      Enabled := True;
-
-      Self.Internal_Enable_Interrupts (Success);
-
-      --  BBF.External_Interrupts.Configure
-      --    (BBF.Board.Pin_50.all,
-      --     BBF.External_Interrupts.Falling_Edge);
-      --  BBF.External_Interrupts.Pin'Class
-      --    (BBF.Board.Pin_50.all).Configure (BBF.External_Interrupts.Falling_Edge);
-      BBF.Board.Pin_50.Configure (BBF.External_Interrupts.Falling_Edge);
-      BBF.Board.Pin_50.Set_Handler (Handler'Access, Self'Address);
-      BBF.Board.Pin_50.Enable_Interrupt;
-
-      Hexapod.Console.Put_Line ("MPU interrupt enabled");
-      --  if not Success then
-      --     raise Program_Error;
-      --  end if;
-      --
-      --  declare
-      --     use type Interfaces.Unsigned_8;
-      --
-      --     B : Interfaces.Unsigned_8 := 255;
-      --
-      --  begin
-      --     while BBF.Board.Pin_50.Get loop
-      --        null;
-      --     end loop;
-      --
-      --     loop
-      --        Self.Bus.Read_Synchronous (Self.Device, 16#3A#, B, Success);
-      --
-      --        if (B and 1) = 0 then
-      --           Hexapod.Console.Put_Line
-      --             ("IS: " & Interfaces.Unsigned_8'Image (B));
-      --           exit;
-      --
-      --        else
-      --           Hexapod.Console.Put (".");
-      --        end if;
-      --     end loop;
-      --  end;
-      --
-      --  --  while BBF.Board.Pin_50.Get loop
-      --  --     null;
-      --  --  end loop;
-      --
-      --  Hexapod.Console.Put_Line
-      --    ("PIN: " & Boolean'Image (BBF.Board.Pin_50.Get));
-   end Enable;
-
-   ---------------
-   -- Configure --
-   ---------------
 
    type CONFIG_Resgisters is record
       SMPLRT_DIV     : Registers.SMPLRT_DIV_Register;
@@ -256,6 +36,171 @@ package body BBF.Drivers.MPU is
       PWR_MGMT_2 : Registers.PWR_MGMT_2_Register;
    end record
      with Pack, Object_Size => 16;
+
+   type INT_Registers is record
+      INT_PIN_CFG : Registers.INT_PIN_CFG_Register;
+      INT_ENABLE  : Registers.INT_ENABLE_Register;
+   end record
+     with Object_Size => 16;
+
+   procedure On_Interrupt (Closure : System.Address);
+
+   procedure On_FIFO_Count_Read (Closure : System.Address);
+
+   procedure On_FIFO_Data_Read (Closure : System.Address);
+
+   package Conversions is
+     new System.Address_To_Access_Conversions
+           (Object => Abstract_MPU_Sensor'Class);
+
+   --  BEGIN  --------------------------------------------------------------
+
+   Flag    : Boolean := False with Volatile;
+
+   --  type Gravitational_Acceleration is delta 1.0 / 2 ** 15 range -16.0 .. 16.0;
+   type Gravitational_Acceleration is delta 1.0 / 16_384 range -16.0 .. 16.0;
+
+   type Rotation_Velosity is delta 1.0 / 131_072 range -2_000.0 .. 2_000.0;
+
+   --------------
+   -- Get_Flag --
+   --------------
+
+   function Get_Flag return Boolean is
+   begin
+      return Result : constant Boolean := Flag do
+         Flag := False;
+      end return;
+   end Get_Flag;
+
+   ----------
+   -- Dump --
+   ----------
+
+   procedure Dump (Self : in out Abstract_MPU_Sensor'Class) is
+      Success : Boolean := True;
+
+      --  A_Scale : constant := 2_048;
+      --  R_Scale : constant := 32_768;
+      GA_Precision : constant := 16_384;
+      GA_Scale     : constant := GA_Precision / 2_048;
+      --  G_Precision : constant := 131_072;  --  2^15 / 250 * 1000
+      --  G_Prescale  : constant := 1_000;
+      --  G_Scale     : constant := 8 * 1_000; --  A_Precision / 16.4;
+
+      function A
+        (H : Interfaces.Integer_8;
+         L : Interfaces.Unsigned_8) return Gravitational_Acceleration
+      is
+         use type Interfaces.Integer_32;
+
+         V_Raw        : constant Interfaces.Integer_32 :=
+           Interfaces.Integer_32 (H) * 256 + Interfaces.Integer_32 (L);
+         V_Scaled     : constant Interfaces.Integer_32 := V_Raw * GA_Scale;
+         A_Integral   : constant Gravitational_Acceleration :=
+           Gravitational_Acceleration (V_Scaled / GA_Precision);
+            A_Fractional : constant Gravitational_Acceleration :=
+              Gravitational_Acceleration'Base
+                (V_Scaled mod GA_Precision) * Gravitational_Acceleration'Delta;
+
+      begin
+            return A_Integral + A_Fractional;
+      end A;
+
+      function A
+        (H : Interfaces.Integer_8;
+         L : Interfaces.Unsigned_8) return Rotation_Velosity
+      is
+         use type Interfaces.Integer_64;
+
+         RV_Precision : constant := 131_072;  --  2^15 / 250 * 1000
+         RV_Scale     : constant := 1_000;
+
+         V_Raw        : constant Interfaces.Integer_64 :=
+           Interfaces.Integer_64 (H) * 256 + Interfaces.Integer_64 (L);
+         V_Scaled     : constant Interfaces.Integer_64 := V_Raw * RV_Scale;
+         --  V_Scaled     : constant Interfaces.Integer_32 := V_Raw * G_Scale;
+         A_Integral   : constant Rotation_Velosity :=
+           Rotation_Velosity (V_Scaled / RV_Precision);
+         --  A_Integral   : constant Rotation_Velosity :=
+         --    Rotation_Velosity (V_Scaled / G_Precision);
+         --    --  Rotation_Velosity ((V_Scaled / G_Precision) / G_Prescale);
+
+      begin
+         --  Hexapod.Console.New_Line;
+         --  Hexapod.Console.Put (Interfaces.Integer_64'Image (V_Scaled));
+         --  Hexapod.Console.Put (Rotation_Velosity'Image (A_Integral));
+         --  Hexapod.Console.Put
+         --    (Interfaces.Integer_64'Image (V_Scaled mod GA_Precision));
+
+         declare
+         A_Fractional : constant Rotation_Velosity :=
+           Rotation_Velosity'Base
+             (Long_Float (V_Scaled mod RV_Precision) * Long_Float (Rotation_Velosity'Delta));
+         --      --  ((V_Scaled mod G_Precision) / G_Prescale) * Rotation_Velosity'Delta;
+      begin
+            return A_Integral + A_Fractional;
+            end;
+      end A;
+
+   begin
+      --  Hexapod.Console.Put_Line
+      --    ("I2C    ERROR: "
+      --     & Integer'Image (Fail_Read_Counter)
+      --     & "   ENQUEUE: "
+      --     & Integer'Image (Enqueue_Read_Counter)
+      --     & "   DONE: "
+      --     & Integer'Image (Success_Read_Counter)
+      --    );
+
+      Hexapod.Console.Put_Line
+        --  (Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_XOUT_H)
+        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_XOUT_L)
+        --   & "   "
+        --   & Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_YOUT_H)
+        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_YOUT_L)
+        --   & "   "
+        --   & Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_YOUT_H)
+        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_YOUT_L)
+        --   & "     "
+        ("GA: "
+         & Gravitational_Acceleration'Image
+           (A (Self.Data.ACCEL.ACCEL_XOUT_H, Self.Data.ACCEL.ACCEL_XOUT_L))
+         & " "
+         & Gravitational_Acceleration'Image
+           (A (Self.Data.ACCEL.ACCEL_YOUT_H, Self.Data.ACCEL.ACCEL_YOUT_L))
+         & " "
+         & Gravitational_Acceleration'Image
+           (A (Self.Data.ACCEL.ACCEL_ZOUT_H, Self.Data.ACCEL.ACCEL_ZOUT_L)));
+
+      Hexapod.Console.Put_Line
+        (Interfaces.Integer_8'Image (Self.Data.TEMP.TEMP_OUT_H)
+         & Interfaces.Unsigned_8'Image (Self.Data.TEMP.TEMP_OUT_L));
+
+      Hexapod.Console.Put_Line
+        ("RV: "
+         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_XOUT_H)
+         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_XOUT_L)
+         --  & "   "
+         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_YOUT_H)
+         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_YOUT_L)
+         --  & "   "
+         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_ZOUT_H)
+         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_ZOUT_L));
+      --  Hexapod.Console.Put_Line
+      --    (""
+         & Rotation_Velosity'Image
+             (A (Self.Data.GYRO.GYRO_XOUT_H, Self.Data.GYRO.GYRO_XOUT_L))
+         & " "
+         & Rotation_Velosity'Image
+             (A (Self.Data.GYRO.GYRO_YOUT_H, Self.Data.GYRO.GYRO_YOUT_L))
+         & " "
+         & Rotation_Velosity'Image
+             (A (Self.Data.GYRO.GYRO_ZOUT_H, Self.Data.GYRO.GYRO_ZOUT_L))
+        );
+   end Dump;
+
+   --  END ----------------------------------------------------------------
 
    ---------------
    -- Configure --
@@ -397,175 +342,137 @@ package body BBF.Drivers.MPU is
         (Self.Device, PWR_MGMT_1_Address, PWR_MGMT_B, Success);
 
       Delays.Delay_Milliseconds (50);
+
+      Self.Accelerometer_Enabled := Accelerometer_Range /= Disabled;
+      Self.Gyroscope_Enabled     := Gyroscope_Range /= Disabled;
+      Self.Temperature_Enabled   := Temperature;
    end Configure;
 
    ----------
    -- Dump --
    ----------
 
-   procedure Dump (Self : in out Abstract_MPU_Sensor'Class) is
-      Data    : Raw_Out_Registers;
-      Buffer  : BBF.I2C.Unsigned_8_Array
-        (1 .. Raw_Out_Registers'Max_Size_In_Storage_Elements)
-           with Address => Data'Address;
-      Success : Boolean := True;
+   procedure Dump (Data : BBF.I2C.Unsigned_8_Array) is
 
-      --  A_Scale : constant := 2_048;
-      --  R_Scale : constant := 32_768;
-      GA_Precision : constant := 16_384;
-      GA_Scale     : constant := GA_Precision / 2_048;
-      --  G_Precision : constant := 131_072;  --  2^15 / 250 * 1000
-      --  G_Prescale  : constant := 1_000;
-      --  G_Scale     : constant := 8 * 1_000; --  A_Precision / 16.4;
+      use type Interfaces.Unsigned_8;
 
-      function A
-        (H : Interfaces.Integer_8;
-         L : Interfaces.Unsigned_8) return Gravitational_Acceleration
-      is
-         use type Interfaces.Integer_32;
-
-         V_Raw        : constant Interfaces.Integer_32 :=
-           Interfaces.Integer_32 (H) * 256 + Interfaces.Integer_32 (L);
-         V_Scaled     : constant Interfaces.Integer_32 := V_Raw * GA_Scale;
-         A_Integral   : constant Gravitational_Acceleration :=
-           Gravitational_Acceleration (V_Scaled / GA_Precision);
-            A_Fractional : constant Gravitational_Acceleration :=
-              Gravitational_Acceleration'Base
-                (V_Scaled mod GA_Precision) * Gravitational_Acceleration'Delta;
-
-      begin
-            return A_Integral + A_Fractional;
-      end A;
-
-      function A
-        (H : Interfaces.Integer_8;
-         L : Interfaces.Unsigned_8) return Rotation_Velosity
-      is
-         use type Interfaces.Integer_64;
-
-         RV_Precision : constant := 131_072;  --  2^15 / 250 * 1000
-         RV_Scale     : constant := 1_000;
-
-         V_Raw        : constant Interfaces.Integer_64 :=
-           Interfaces.Integer_64 (H) * 256 + Interfaces.Integer_64 (L);
-         V_Scaled     : constant Interfaces.Integer_64 := V_Raw * RV_Scale;
-         --  V_Scaled     : constant Interfaces.Integer_32 := V_Raw * G_Scale;
-         A_Integral   : constant Rotation_Velosity :=
-           Rotation_Velosity (V_Scaled / RV_Precision);
-         --  A_Integral   : constant Rotation_Velosity :=
-         --    Rotation_Velosity (V_Scaled / G_Precision);
-         --    --  Rotation_Velosity ((V_Scaled / G_Precision) / G_Prescale);
-
-      begin
-         --  Hexapod.Console.New_Line;
-         --  Hexapod.Console.Put (Interfaces.Integer_64'Image (V_Scaled));
-         --  Hexapod.Console.Put (Rotation_Velosity'Image (A_Integral));
-         --  Hexapod.Console.Put
-         --    (Interfaces.Integer_64'Image (V_Scaled mod GA_Precision));
-
-         declare
-         A_Fractional : constant Rotation_Velosity :=
-           Rotation_Velosity'Base
-             (Long_Float (V_Scaled mod RV_Precision) * Long_Float (Rotation_Velosity'Delta));
-         --      --  ((V_Scaled mod G_Precision) / G_Prescale) * Rotation_Velosity'Delta;
-      begin
-            return A_Integral + A_Fractional;
-            end;
-      end A;
+      N2H  : constant array (Interfaces.Unsigned_8 range 0 .. 15) of Character :=
+        "0123456789ABCDEF";
+      Line : String (1 .. Data'Length * 3) := (others => ' ');
 
    begin
-      Hexapod.Console.Put_Line
-        ("I2C    ERROR: "
-         & Integer'Image (Fail_Read_Counter)
-         & "   ENQUEUE: "
-         & Integer'Image (Enqueue_Read_Counter)
-         & "   DONE: "
-         & Integer'Image (Success_Read_Counter)
-        );
+      for J in Data'Range loop
+         Line ((J - Data'First) * 3 + 2 .. (J - Data'First) * 3 + 3) :=
+           (1 => N2H (Data (J) / 16),
+            2 => N2H (Data (J) mod 16));
+      end loop;
 
-      --  Self.Bus.Read_Synchronous
-      --    (Self.Device, ACCEL_XOUT_H_Address, Buffer, Success);
-      --
-      Hexapod.Console.Put_Line
-        --  (Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_XOUT_H)
-        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_XOUT_L)
-        --   & "   "
-        --   & Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_YOUT_H)
-        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_YOUT_L)
-        --   & "   "
-        --   & Interfaces.Integer_8'Image (Data.ACCEL.ACCEL_YOUT_H)
-        --   & Interfaces.Unsigned_8'Image (Data.ACCEL.ACCEL_YOUT_L)
-        --   & "     "
-        ("GA: "
-         & Gravitational_Acceleration'Image
-           (A (Data.ACCEL.ACCEL_XOUT_H, Data.ACCEL.ACCEL_XOUT_L))
-         & " "
-         & Gravitational_Acceleration'Image
-           (A (Data.ACCEL.ACCEL_YOUT_H, Data.ACCEL.ACCEL_YOUT_L))
-         & " "
-         & Gravitational_Acceleration'Image
-           (A (Data.ACCEL.ACCEL_ZOUT_H, Data.ACCEL.ACCEL_ZOUT_L)));
-
-      Hexapod.Console.Put_Line
-        (Interfaces.Integer_8'Image (Data.TEMP.TEMP_OUT_H)
-         & Interfaces.Unsigned_8'Image (Data.TEMP.TEMP_OUT_L));
-
-      Hexapod.Console.Put_Line
-        ("RV: "
-         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_XOUT_H)
-         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_XOUT_L)
-         --  & "   "
-         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_YOUT_H)
-         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_YOUT_L)
-         --  & "   "
-         --  & Interfaces.Integer_8'Image (Data.GYRO.GYRO_ZOUT_H)
-         --  & Interfaces.Unsigned_8'Image (Data.GYRO.GYRO_ZOUT_L));
-      --  Hexapod.Console.Put_Line
-      --    (""
-         & Rotation_Velosity'Image
-             (A (Data.GYRO.GYRO_XOUT_H, Data.GYRO.GYRO_XOUT_L))
-         & " "
-         & Rotation_Velosity'Image
-             (A (Data.GYRO.GYRO_YOUT_H, Data.GYRO.GYRO_YOUT_L))
-         & " "
-         & Rotation_Velosity'Image
-             (A (Data.GYRO.GYRO_ZOUT_H, Data.GYRO.GYRO_ZOUT_L))
-        );
-
-      --
-      --  --  BBF.Board.Pin_50.Set_Direction (BBF.GPIO.Input);
-      --  Hexapod.Console.New_Line;
-      --  Hexapod.Console.Put_Line
-      --    ("PIN: " & Boolean'Image (BBF.Board.Pin_50.Get));
-
-      Self.Enable;
-      --  Handler (Self'Address);
+      Hexapod.Console.Put_Line (Line);
    end Dump;
 
-   --------------------------------
-   -- Internal_Enable_Interrupts --
-   --------------------------------
+   ------------
+   -- Enable --
+   ------------
 
-   not overriding procedure Internal_Enable_Interrupts
-     (Self    : in out Abstract_MPU_Sensor;
-      Success : in out Boolean) is
+   procedure Enable
+     (Self   : in out Abstract_MPU_Sensor'Class;
+      Delays : not null access BBF.Delays.Delay_Controller'Class)
+   is
+      Success     : Boolean := True;
+
    begin
-      raise Program_Error;
-   end Internal_Enable_Interrupts;
+      --  Disable everything
 
-   -------------------------
-   -- Internal_Initialize --
-   -------------------------
+      declare
+         INT_ENABLE   : constant Registers.INT_ENABLE_Register :=
+           (others => False);
+         INT_ENABLE_B : constant Interfaces.Unsigned_8
+           with Import, Address => INT_ENABLE'Address;
+         FIFO_EN      : constant Registers.FIFO_EN_Register :=
+           (others => False);
+         FIFO_EN_B    : constant Interfaces.Unsigned_8
+           with Import, Address => FIFO_EN'Address;
+         USER_CTRL    : constant Registers.USER_CTRL_Register :=
+           (others => False);
+         USER_CTRL_B  : constant Interfaces.Unsigned_8
+           with Import, Address => USER_CTRL'Address;
 
-   procedure Internal_Initialize
-     (Self    : in out Abstract_MPU_Sensor;
-      Success : in out Boolean) is
-   begin
-      --  XXX set internal data
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device, INT_ENABLE_Address, INT_ENABLE_B, Success);
+         Self.Bus.Write_Synchronous
+           (Self.Device, FIFO_EN_Address, INT_ENABLE_B, Success);
+         Self.Bus.Write_Synchronous
+           (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
+      end;
 
-      null;
+      --  Reset FIFO
+
+      declare
+         USER_CTRL   : constant Registers.USER_CTRL_Register :=
+           (FIFO_RESET => True,
+            others     => False);
+         USER_CTRL_B : constant Interfaces.Unsigned_8
+           with Import, Address => USER_CTRL'Address;
+
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
+      end;
+
+      --  Enable FIFO, interrupts and configure sensors to report
+
+      declare
+         INT         : constant INT_Registers :=
+           (INT_PIN_CFG  =>
+              (ACTL             => True,
+               INT_ANYRD_2CLEAR => True,
+               others           => <>),
+            INT_ENABLE   =>
+              (RAW_RDY_EN => True,
+               others     => False));
+         INT_B       : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
+           with Import, Address => INT'Address;
+         USER_CTRL   : constant Registers.USER_CTRL_Register :=
+           (FIFO_EN => True,
+            others  => False);
+         USER_CTRL_B : constant Interfaces.Unsigned_8
+           with Import, Address => USER_CTRL'Address;
+         FIFO_EN     : constant Registers.FIFO_EN_Register :=
+           (ACCEL_FIFO_EN => Self.Accelerometer_Enabled,
+            XG_FIFO_EN    => Self.Gyroscope_Enabled,
+            YG_FIFO_EN    => Self.Gyroscope_Enabled,
+            ZG_FIFO_EN    => Self.Gyroscope_Enabled,
+            TEMP_FIFO_EN  => Self.Temperature_Enabled,
+            others        => False);
+         FIFO_EN_B   : constant Interfaces.Unsigned_8
+           with Import, Address => FIFO_EN'Address;
+
+      begin
+         Self.Bus.Write_Synchronous
+           (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
+
+         Delays.Delay_Milliseconds (50);
+
+         Self.Bus.Write_Synchronous
+           (Self.Device, INT_PIN_CFG_Address, INT_B, Success);
+         Self.Bus.Write_Synchronous
+           (Self.Device, FIFO_EN_Address, FIFO_EN_B, Success);
+      end;
+
+      if not Success then
+         return;
+      end if;
+
+      --  Configure pin to generate interrupts
+
       BBF.HPL.PMC.Enable_Peripheral_Clock (BBF.HPL.Parallel_IO_Controller_C);
-   end Internal_Initialize;
+      --  XXX Must be moved out!
+
+      BBF.Board.Pin_50.Configure (BBF.External_Interrupts.Falling_Edge);
+      BBF.Board.Pin_50.Set_Handler (On_Interrupt'Access, Self'Address);
+      BBF.Board.Pin_50.Enable_Interrupt;
+   end Enable;
 
    -------------------------
    -- Internal_Initialize --
@@ -674,48 +581,123 @@ package body BBF.Drivers.MPU is
       Self.Initialized := True;
    end Internal_Initialize;
 
---     ----------------
---     -- Initialize --
---     ----------------
---
---     procedure Initialize
---       (Self    : in out Abstract_MPU_Sensor'Class;
---        Delays  : not null access BBF.Delays.Delay_Controller'Class;
---        Success : in out Boolean)
---     is
---
---     begin
---        Self.Initialized := False;
---
---        --  Reset device
---
---        Self.Internal_Reset (Success);
---        Delays.Delay_Milliseconds (100);
---
---        --  Wakeup chip
---
---        Self.Internal_Wakeup (Success);
---
---        --  Chip specific initialization
---
---        Self.Internal_Initialize (Success);
---
---
---  --      BBF.HPL.TWI.Master_Read_Synchronous
---  --       (Self.Bus, Device_Address, 16#08#, Buffer, Success);
---  --
---  --      if not Success then
---  --         Console.Put_Line ("  Read (08) failure");
---  --
---  --         return;
---  --      end if;
---
---        Self.Bus.Write_Synchronous
---          (Device_Address, INT_PIN_CFG_Address, 2#0000_0010#, Success);
---
---        if not Success then
---           Hexapod.Console.Put_Line ("MPU9250 write error, register 37");
---        end if;
---     end Initialize;
+   ------------------------
+   -- On_FIFO_Count_Read --
+   ------------------------
+
+   procedure On_FIFO_Count_Read (Closure : System.Address) is
+      use type Interfaces.Unsigned_16;
+
+      Self    : constant Conversions.Object_Pointer :=
+        Conversions.To_Pointer (Closure);
+      Size    : constant Interfaces.Unsigned_16 :=
+        (if Self.Accelerometer_Enabled then 6 else 0)
+          + (if Self.Gyroscope_Enabled then 6 else 0)
+          + (if Self.Temperature_Enabled then 2 else 0);
+      Amount  : constant Interfaces.Unsigned_16 :=
+        Interfaces.Unsigned_16 (Self.Buffer (1)) * 256
+          + Interfaces.Unsigned_16 (Self.Buffer (2));
+      Success : Boolean := True;
+
+   begin
+      if Amount < Size then
+         Hexapod.Console.Put_Line
+           ("FIFO "
+            & Interfaces.Unsigned_16'Image (Amount)
+            & " bytes., expected "
+            & Interfaces.Unsigned_16'Image (Size));
+
+         return;
+      end if;
+
+      Self.Bus.Read_Asynchronous
+        (Device     => Self.Device,
+         Register   => FIFO_R_W_Address,
+         Data       => Self.Buffer (1)'Address,
+         Length     => Size,
+         On_Success => On_FIFO_Data_Read'Access,
+         On_Error   => null,
+         Closure    => Closure,
+         Success    => Success);
+   end On_FIFO_Count_Read;
+
+   -----------------------
+   -- On_FIFO_Data_Read --
+   -----------------------
+
+   Cnt : Natural := 0;
+
+   procedure On_FIFO_Data_Read (Closure : System.Address) is
+
+      use type System.Storage_Elements.Storage_Offset;
+
+      Self   : constant Conversions.Object_Pointer :=
+        Conversions.To_Pointer (Closure);
+      Offset : System.Storage_Elements.Storage_Offset := 0;
+
+   begin
+      if Self.Accelerometer_Enabled then
+         declare
+            Aux : constant ACCEL_OUT_Register
+              with Import, Address => Self.Buffer'Address + Offset;
+
+         begin
+            Self.Data.ACCEL := Aux;
+            Offset          := Offset + 6;
+         end;
+      end if;
+
+      if Self.Temperature_Enabled then
+         declare
+            Aux : constant TEMP_OUT_Register
+              with Import, Address => Self.Buffer'Address + Offset;
+
+         begin
+            Self.Data.TEMP := Aux;
+            Offset         := Offset + 2;
+         end;
+      end if;
+
+      if Self.Gyroscope_Enabled then
+         declare
+            Aux : constant GYRO_OUT_Register
+              with Import, Address => Self.Buffer'Address + Offset;
+
+         begin
+            Self.Data.GYRO := Aux;
+            Offset         := Offset + 6;
+         end;
+      end if;
+
+      if Cnt mod 300 = 0 then
+         Dump (Self.Buffer (1 .. 14));
+      end if;
+
+      Cnt  := @ + 1;
+      Flag := True;
+   end On_FIFO_Data_Read;
+
+   ------------------
+   -- On_Interrupt --
+   ------------------
+
+   procedure On_Interrupt (Closure : System.Address) is
+      Self    : constant Conversions.Object_Pointer :=
+        Conversions.To_Pointer (Closure);
+      Success : Boolean := True;
+
+   begin
+      --  Initiate load of amount of data available in FIFO.
+
+      Self.Bus.Read_Asynchronous
+        (Device     => Self.Device,
+         Register   => FIFO_COUNT_H_Address,
+         Data       => Self.Buffer (1)'Address,
+         Length     => 2,
+         On_Success => On_FIFO_Count_Read'Access,
+         On_Error   => null,
+         Closure    => Closure,
+         Success    => Success);
+   end On_Interrupt;
 
 end BBF.Drivers.MPU;

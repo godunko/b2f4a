@@ -13,8 +13,6 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
-with BBF.Delays;
-
 package BBF.Drivers.MPU.MPU6050 is
 
    pragma Preelaborate;
@@ -29,10 +27,6 @@ package BBF.Drivers.MPU.MPU6050 is
 private
 
    type MPU6050_Sensor is new Abstract_MPU_Sensor with null record;
-
-   overriding procedure Internal_Enable_Interrupts
-     (Self    : in out MPU6050_Sensor;
-      Success : in out Boolean);
 
    overriding function Is_6500_9250
      (Self : MPU6050_Sensor) return Boolean is (False);

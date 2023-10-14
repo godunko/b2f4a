@@ -24,16 +24,6 @@ package body BBF.Drivers.MPU.MPU6500.MPU9250 is
    begin
       Self.Internal_Initialize (Delays, MPU9250_WHOAMI, Success);
 
-      if not Success then
-         --  Check may be removed after change convention about Success in I2C.
-
-         return;
-      end if;
-
-      --  Initialize common data structures and defaults.
-
-      Self.Internal_Initialize (Success);
-
       --  XXX Initialize compass
    end Initialize;
 
