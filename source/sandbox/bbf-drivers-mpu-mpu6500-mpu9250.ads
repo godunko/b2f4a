@@ -26,6 +26,6 @@ package BBF.Drivers.MPU.MPU6500.MPU9250 is
 
 private
 
-   type MPU9250_Sensor is new Abstract_MPU_Sensor with null record;
+   type MPU9250_Sensor is new MPU6500_Sensor with null record;
 
 end BBF.Drivers.MPU.MPU6500.MPU9250;
