@@ -18,6 +18,8 @@ package BBF.Drivers.MPU.DMP612 is
 
    pragma Preelaborate;
 
+   DMP_Sample_Rate : constant := 200;
+
    procedure Upload_Firmware
      (Self    : in out Abstract_MPU_Sensor'Class;
       Success : in out Boolean);

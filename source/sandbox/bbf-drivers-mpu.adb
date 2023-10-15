@@ -16,6 +16,7 @@ with System.Address_To_Access_Conversions;
 with System.Storage_Elements;
 
 with BBF.Board;
+with BBF.Drivers.MPU.DMP612;
 with BBF.External_Interrupts;
 with BBF.HPL.PMC;  --  XXX Need to be removed.
 
@@ -42,6 +43,15 @@ package body BBF.Drivers.MPU is
    end record
      with Object_Size => 16;
 
+   procedure Compute_CONFIG
+     (Self                : in out Abstract_MPU_Sensor'Class;
+      CONFIG              : out CONFIG_Resgisters;
+      Accelerometer_Range : Accelerometer_Range_Type;
+      Gyroscope_Range     : Gyroscope_Range_Type;
+      Filter              : Boolean;
+      Sample_Rate         : Sample_Rate_Type);
+   --  Compute value of CONFIG registers on given parameters.
+
    procedure On_Interrupt (Closure : System.Address);
 
    procedure On_FIFO_Count_Read (Closure : System.Address);
@@ -66,29 +76,32 @@ package body BBF.Drivers.MPU is
 
    DMP_Bank_Size : constant := 256;
 
-   ---------------
-   -- Configure --
-   ---------------
+   --------------------
+   -- Compute_CONFIG --
+   --------------------
 
-   procedure Configure
+   procedure Compute_CONFIG
      (Self                : in out Abstract_MPU_Sensor'Class;
-      Delays              : not null access BBF.Delays.Delay_Controller'Class;
+      CONFIG              : out CONFIG_Resgisters;
       Accelerometer_Range : Accelerometer_Range_Type;
       Gyroscope_Range     : Gyroscope_Range_Type;
-      Temperature         : Boolean;
       Filter              : Boolean;
-      Sample_Rate         : Sample_Rate_Type;
-      Success             : in out Boolean)
+      Sample_Rate         : Sample_Rate_Type)
    is
-      use type Interfaces.Unsigned_8;
+      use type Interfaces.Unsigned_16;
 
-      SMPLRT_DIV : constant Interfaces.Unsigned_8 :=
+      SMPLRT_DIV         : constant Interfaces.Unsigned_8 :=
         Interfaces.Unsigned_8
           ((if Filter then 1_000 else 8_000) / Sample_Rate - 1);
       --  MPU6500 has additional 8_000 and 32_000 modes, however, this value is
       --  used only when DLPF in 1 .. 6.
+      Actual_Sample_Rate : constant Sample_Rate_Type :=
+        Sample_Rate_Type
+          ((if Filter then 1_000 else 8_000)
+              / (1 + Interfaces.Unsigned_16 (SMPLRT_DIV)));
 
-      CONFIG     : constant CONFIG_Resgisters :=
+   begin
+      CONFIG :=
         (SMPLRT_DIV     =>
            (SMPLRT_DIV => SMPLRT_DIV),
            --  MPU6050: Gyro rate is 8k when CONFIG:DLPF_CFG = 0, and
@@ -98,12 +111,12 @@ package body BBF.Drivers.MPU is
          CONFIG         =>
            (DLPF_CFG          =>
                 (if not Filter then 0
-                 elsif Sample_Rate >= 188 * 2 then 1
-                 elsif Sample_Rate >=  98 * 2 then 2
-                 elsif Sample_Rate >=  42 * 2 then 3
-                 elsif Sample_Rate >=  20 * 2 then 4
-                 elsif Sample_Rate >=  10 * 2 then 5
-                                              else 6),
+                 elsif Actual_Sample_Rate >= 188 * 2 then 1
+                 elsif Actual_Sample_Rate >=  98 * 2 then 2
+                 elsif Actual_Sample_Rate >=  42 * 2 then 3
+                 elsif Actual_Sample_Rate >=  20 * 2 then 4
+                 elsif Actual_Sample_Rate >=  10 * 2 then 5
+                                                     else 6),
             --  MPU6500 support value 7 to bypass filter, not implemented.
             EXT_SYNC_SET      => Registers.Disabled,
             MPU6500_FIFO_MODE => False,
@@ -131,12 +144,12 @@ package body BBF.Drivers.MPU is
          ACCEL_CONFIG_2 =>
            (A_DLPF_CFG     =>
                 (if not Filter then 0
-                 elsif Sample_Rate >= 188 * 2 then 1
-                 elsif Sample_Rate >=  98 * 2 then 2
-                 elsif Sample_Rate >=  42 * 2 then 3
-                 elsif Sample_Rate >=  20 * 2 then 4
-                 elsif Sample_Rate >=  10 * 2 then 5
-                                              else 6),
+                 elsif Actual_Sample_Rate >= 188 * 2 then 1
+                 elsif Actual_Sample_Rate >=  98 * 2 then 2
+                 elsif Actual_Sample_Rate >=  42 * 2 then 3
+                 elsif Actual_Sample_Rate >=  20 * 2 then 4
+                 elsif Actual_Sample_Rate >=  10 * 2 then 5
+                                                     else 6),
             ACCEL_CHOICE_B => False,
             FIFO_SIZE_1024 => True,
             --  MPU6500 shares 4kB of memory between the DMP and the FIFO.
@@ -145,7 +158,38 @@ package body BBF.Drivers.MPU is
             others         => False));
          --  This register is available on MPU6500/9250 only. Selected values
          --  run accelerometer at about 180 Hz, like gyro.
-      CONFIG_B   : constant BBF.I2C.Unsigned_8_Array (1 .. 5)
+
+      --  Configuration of SMPLRT_DIV is set to lower gyro rate on MPU6050 to
+      --  rate of the accelerometer.
+      --
+      --  DLPF is enabled and DLPF_CFG/FCHOICE_B set to have gyro rate 184 Hz.
+      --  It is possible to lower gyro rate and have it close to accelerometer
+      --  rate.
+      --
+      --  On MPU6500/9250 accelerometer configured to 188 Hz rate. It is
+      --  separate rergister on these sensors, on MPU6050/9150 when DLPF
+      --  is configured it applies to both gyro and accelerometer.
+      --
+      --  MPU6500/9250 has more modes, but they are not compatible with
+      --  MPU6050/9150 and not useful for my purposes.
+   end Compute_CONFIG;
+
+   ---------------
+   -- Configure --
+   ---------------
+
+   procedure Configure
+     (Self                : in out Abstract_MPU_Sensor'Class;
+      Delays              : not null access BBF.Delays.Delay_Controller'Class;
+      Accelerometer_Range : Accelerometer_Range_Type;
+      Gyroscope_Range     : Gyroscope_Range_Type;
+      Temperature         : Boolean;
+      Filter              : Boolean;
+      Sample_Rate         : Sample_Rate_Type;
+      Success             : in out Boolean)
+   is
+      CONFIG     : CONFIG_Resgisters;
+      CONFIG_B   : BBF.I2C.Unsigned_8_Array (1 .. 5)
         with Import, Convention => Ada, Address => CONFIG'Address;
 
       PWR_MGMT   : constant PWR_MGMT_Registers :=
@@ -183,19 +227,10 @@ package body BBF.Drivers.MPU is
          return;
       end if;
 
-      --  Configuration of SMPLRT_DIV is set to lower gyro rate on MPU6050 to
-      --  rate of the accelerometer.
-      --
-      --  DLPF is enabled and DLPF_CFG/FCHOICE_B set to have gyro rate 184 Hz.
-      --  It is possible to lower gyro rate and have it close to accelerometer
-      --  rate.
-      --
-      --  On MPU6500/9250 accelerometer configured to 188 Hz rate. It is
-      --  separate rergister on these sensors, on MPU6050/9150 when DLPF
-      --  is configured it applies to both gyro and accelerometer.
-      --
-      --  MPU6500/9250 has more modes, but they are not compatible with
-      --  MPU6050/9150 and not useful for my purposes.
+      Self.DMP_Enabled := False;
+
+      Self.Compute_CONFIG
+        (CONFIG, Accelerometer_Range, Gyroscope_Range, Filter, Sample_Rate);
 
       Self.Bus.Write_Synchronous
         (Self.Device,
@@ -210,6 +245,74 @@ package body BBF.Drivers.MPU is
       Self.Accelerometer_Enabled := Accelerometer_Range /= Disabled;
       Self.Gyroscope_Enabled     := Gyroscope_Range /= Disabled;
       Self.Temperature_Enabled   := Temperature;
+   end Configure;
+
+   ---------------
+   -- Configure --
+   ---------------
+
+   procedure Configure
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Delays  : not null access BBF.Delays.Delay_Controller'Class;
+      Success : in out Boolean)
+   is
+      CONFIG     : CONFIG_Resgisters;
+      CONFIG_B   : BBF.I2C.Unsigned_8_Array (1 .. 5)
+        with Import, Convention => Ada, Address => CONFIG'Address;
+
+      PWR_MGMT   : constant PWR_MGMT_Registers :=
+        (PWR_MGMT_1 =>
+           (CLKSEL => Registers.Internal,
+            SLEEP  => False,
+            others => <>),
+         PWR_MGMT_2 =>
+           (STBY_ZG => False,
+            STBY_YG => False,
+            STBY_XG => False,
+            STBY_ZA => False,
+            STBY_YA => False,
+            STBY_XA => False,
+            others  => <>));
+      --  Recommended by Application Notes.
+      PWR_MGMT_B : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
+        with Import, Convention => Ada, Address => PWR_MGMT'Address;
+
+   begin
+      if not Success then
+         return;
+      end if;
+
+      if not Self.Initialized then
+         Success := False;
+
+         return;
+      end if;
+
+      Self.DMP_Enabled := True;
+
+      Self.Compute_CONFIG
+        (CONFIG,
+         FSR_2G,
+         FSR_2000DPS,
+         True,
+         DMP612.DMP_Sample_Rate);
+      CONFIG.CONFIG.DLPF_CFG := 3;
+      --  Application Notes for DMP recommends to use 42 Hz, while library
+      --  configure it to 98 Hz. Use value from Application Notes.
+
+      Self.Bus.Write_Synchronous
+        (Self.Device,
+         SMPLRT_DIV_Address,
+         CONFIG_B (1 .. (if Self.Is_6500_9250 then 5 else 4)),
+         Success);
+      Self.Bus.Write_Synchronous
+        (Self.Device, PWR_MGMT_1_Address, PWR_MGMT_B, Success);
+
+      Delays.Delay_Milliseconds (50);
+
+      Self.Accelerometer_Enabled := True;
+      Self.Gyroscope_Enabled     := True;
+      Self.Temperature_Enabled   := True;
    end Configure;
 
    ------------

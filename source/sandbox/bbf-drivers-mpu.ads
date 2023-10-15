@@ -66,9 +66,17 @@ package BBF.Drivers.MPU is
       Filter              : Boolean;
       Sample_Rate         : Sample_Rate_Type;
       Success             : in out Boolean);
+   --  Configure sensor in raw data mode, with low pass filter.
+   --
    --  Rate of the Digital Low Pass Filter is selected automatically depending
    --  on given sample rate. Filter rate might be 188, 98, 42, 20, 10, or 5 Hz
    --  and at least two times less than sample rate.
+
+   procedure Configure
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Delays  : not null access BBF.Delays.Delay_Controller'Class;
+      Success : in out Boolean);
+   --  Configure sensor in DMP mode.
 
    procedure Enable
      (Self   : in out Abstract_MPU_Sensor'Class;
@@ -427,6 +435,7 @@ private
       Accelerometer_Enabled : Boolean := False;
       Gyroscope_Enabled     : Boolean := False;
       Temperature_Enabled   : Boolean := False;
+      DMP_Enabled           : Boolean := False;
 
       User_Bank             : Boolean := False with Volatile;
       Raw_Data              : Raw_Data_Array;
