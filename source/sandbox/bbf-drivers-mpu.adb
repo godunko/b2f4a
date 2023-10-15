@@ -62,18 +62,6 @@ package body BBF.Drivers.MPU is
      new System.Address_To_Access_Conversions
            (Object => Abstract_MPU_Sensor'Class);
 
-   procedure Write_DMP_Memory
-     (Self    : in out Abstract_MPU_Sensor'Class;
-      Address : Interfaces.Unsigned_16;
-      Data    : BBF.I2C.Unsigned_8_Array;
-      Success : in out Boolean);
-
-   procedure Read_DMP_Memory
-     (Self    : in out Abstract_MPU_Sensor'Class;
-      Address : Interfaces.Unsigned_16;
-      Data    : out BBF.I2C.Unsigned_8_Array;
-      Success : in out Boolean);
-
    DMP_Bank_Size : constant := 256;
 
    --------------------
@@ -188,6 +176,8 @@ package body BBF.Drivers.MPU is
       Sample_Rate         : Sample_Rate_Type;
       Success             : in out Boolean)
    is
+      use type Interfaces.Unsigned_16;
+
       CONFIG     : CONFIG_Resgisters;
       CONFIG_B   : BBF.I2C.Unsigned_8_Array (1 .. 5)
         with Import, Convention => Ada, Address => CONFIG'Address;
@@ -245,6 +235,11 @@ package body BBF.Drivers.MPU is
       Self.Accelerometer_Enabled := Accelerometer_Range /= Disabled;
       Self.Gyroscope_Enabled     := Gyroscope_Range /= Disabled;
       Self.Temperature_Enabled   := Temperature;
+
+      Self.FIFO_Packet_Size :=
+        (if Self.Accelerometer_Enabled then 6 else 0)
+          + (if Self.Gyroscope_Enabled then 6 else 0)
+          + (if Self.Temperature_Enabled then 2 else 0);
    end Configure;
 
    ---------------
@@ -252,9 +247,10 @@ package body BBF.Drivers.MPU is
    ---------------
 
    procedure Configure
-     (Self    : in out Abstract_MPU_Sensor'Class;
-      Delays  : not null access BBF.Delays.Delay_Controller'Class;
-      Success : in out Boolean)
+     (Self      : in out Abstract_MPU_Sensor'Class;
+      Delays    : not null access BBF.Delays.Delay_Controller'Class;
+      FIFO_Rate : FIFO_Rate_Type;
+      Success   : in out Boolean)
    is
       CONFIG     : CONFIG_Resgisters;
       CONFIG_B   : BBF.I2C.Unsigned_8_Array (1 .. 5)
@@ -313,6 +309,18 @@ package body BBF.Drivers.MPU is
       Self.Accelerometer_Enabled := True;
       Self.Gyroscope_Enabled     := True;
       Self.Temperature_Enabled   := True;
+
+      --  BLACK MAGIC!
+
+      DMP612.Set_FIFO_Rate (Self, FIFO_Rate);
+      DMP612.Enable_Features
+        (Self                  => Self,
+         Accelerometer         => DMP612.Raw,
+         Gyroscope             => DMP612.Calibrated,
+         Quaternion            => DMP612.Quaternion_6,
+         Gyroscope_Calibration => True,
+         Tap                   => False,
+         Android_Orientation   => False);
    end Configure;
 
    ------------
@@ -542,16 +550,12 @@ package body BBF.Drivers.MPU is
 
       Self    : constant Conversions.Object_Pointer :=
         Conversions.To_Pointer (Closure);
-      Size    : constant Interfaces.Unsigned_16 :=
-        (if Self.Accelerometer_Enabled then 6 else 0)
-          + (if Self.Gyroscope_Enabled then 6 else 0)
-          + (if Self.Temperature_Enabled then 2 else 0);
       Amount  : constant Registers.FIFO_COUNT_Register
         with Import, Address => Self.Buffer (1)'Address;
       Success : Boolean := True;
 
    begin
-      if Amount.Value < Size then
+      if Amount.Value < Self.FIFO_Packet_Size then
          --  Not enough data available.
 
          return;
@@ -561,7 +565,7 @@ package body BBF.Drivers.MPU is
         (Device     => Self.Device,
          Register   => FIFO_R_W_Address,
          Data       => Self.Buffer (1)'Address,
-         Length     => Size,
+         Length     => Self.FIFO_Packet_Size,
          On_Success => On_FIFO_Data_Read'Access,
          On_Error   => null,
          Closure    => Closure,
@@ -584,6 +588,12 @@ package body BBF.Drivers.MPU is
       Data   : Raw_Data renames Self.Raw_Data (not Self.User_Bank);
 
    begin
+      if Self.DMP_Enabled then
+         DMP612.Unpack_FIFO_Packet (Self.all);
+
+         return;
+      end if;
+
       if Self.Accelerometer_Enabled then
          declare
             Aux : constant Registers.ACCEL_OUT_Register
@@ -651,23 +661,21 @@ package body BBF.Drivers.MPU is
          raise Program_Error with "MPU6xxx FIFO OVERFLOW";
       end if;
 
-      if not INT_STATUS.DATA_RDY_INT then
-         --  Data is not ready
+      if (INT_STATUS.DATA_RDY_INT and not Self.DMP_Enabled)
+        or (INT_STATUS.DMP_INT and Self.DMP_Enabled)
+      then
+         --  Initiate load of amount of data available in FIFO.
 
-         return;
+         Self.Bus.Read_Asynchronous
+           (Device     => Self.Device,
+            Register   => FIFO_COUNT_Address,
+            Data       => Self.Buffer (1)'Address,
+            Length     => FIFO_COUNT_Length,
+            On_Success => On_FIFO_Count_Read'Access,
+            On_Error   => null,
+            Closure    => Closure,
+            Success    => Success);
       end if;
-
-      --  Initiate load of amount of data available in FIFO.
-
-      Self.Bus.Read_Asynchronous
-        (Device     => Self.Device,
-         Register   => FIFO_COUNT_Address,
-         Data       => Self.Buffer (1)'Address,
-         Length     => FIFO_COUNT_Length,
-         On_Success => On_FIFO_Count_Read'Access,
-         On_Error   => null,
-         Closure    => Closure,
-         Success    => Success);
    end On_INT_STATUS_Read;
 
    ------------------
@@ -773,7 +781,7 @@ package body BBF.Drivers.MPU is
               (Interfaces.Integer_32, Gravitational_Acceleration);
 
    begin
-      return Convert (Interfaces.Integer_32 (Raw) * 8);
+      return Convert (Interfaces.Integer_32 (Raw) * 1);
       --  XXX 8 must be replaced by configured value
    end To_Gravitational_Acceleration;
 

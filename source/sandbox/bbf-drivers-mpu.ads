@@ -57,6 +57,8 @@ package BBF.Drivers.MPU is
 
    type Sample_Rate_Type is range 4 .. 1_000;
 
+   type FIFO_Rate_Type is range 4 .. 200;
+
    procedure Configure
      (Self                : in out Abstract_MPU_Sensor'Class;
       Delays              : not null access BBF.Delays.Delay_Controller'Class;
@@ -73,9 +75,10 @@ package BBF.Drivers.MPU is
    --  and at least two times less than sample rate.
 
    procedure Configure
-     (Self    : in out Abstract_MPU_Sensor'Class;
-      Delays  : not null access BBF.Delays.Delay_Controller'Class;
-      Success : in out Boolean);
+     (Self      : in out Abstract_MPU_Sensor'Class;
+      Delays    : not null access BBF.Delays.Delay_Controller'Class;
+      FIFO_Rate : FIFO_Rate_Type;
+      Success   : in out Boolean);
    --  Configure sensor in DMP mode.
 
    procedure Enable
@@ -375,6 +378,19 @@ private
              Bit_Order            => System.High_Order_First,
              Scalar_Storage_Order => System.High_Order_First;
 
+      --  DMP_QUATERNION
+
+      type DMP_QUAT_OUT_Register is record
+         Q0 : Interfaces.Integer_32;
+         Q1 : Interfaces.Integer_32;
+         Q2 : Interfaces.Integer_32;
+         Q3 : Interfaces.Integer_32;
+      end record
+        with Pack,
+             Object_Size          => 128,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
    end Registers;
 
    --  AK8975_Address : constant BBF.I2C.Device_Address := 16#0C#;
@@ -419,13 +435,16 @@ private
    FIFO_R_W_Address          : constant BBF.I2C.Internal_Address_8 := 16#74#;
    WHO_AM_I_Address          : constant BBF.I2C.Internal_Address_8 := 16#75#;
 
+   DMP_QUAT_OUT_Length       : constant                            := 16;
+
    type Raw_Data is record
       ACCEL     : Registers.ACCEL_OUT_Register;
       TEMP      : Registers.TEMP_OUT_Register;
       GYRO      : Registers.GYRO_OUT_Register;
+      QUAT      : Registers.DMP_QUAT_OUT_Register;
       Timestamp : BBF.Clocks.Time;
    end record
-     with Object_Size => 176;
+     with Object_Size => 304;
 
    type Raw_Data_Array is array (Boolean) of Raw_Data;
 
@@ -434,26 +453,41 @@ private
       Device : BBF.I2C.Device_Address;
       Clocks : not null access BBF.Clocks.Real_Time_Clock_Controller'Class)
    is abstract tagged limited record
-      Initialized           : Boolean := False;
+      Initialized               : Boolean := False;
 
-      Accelerometer_Enabled : Boolean := False;
-      Gyroscope_Enabled     : Boolean := False;
-      Temperature_Enabled   : Boolean := False;
-      DMP_Enabled           : Boolean := False;
+      Accelerometer_Enabled     : Boolean := False;
+      Gyroscope_Enabled         : Boolean := False;
+      Temperature_Enabled       : Boolean := False;
 
-      User_Bank             : Boolean := False with Volatile;
-      Raw_Data              : Raw_Data_Array;
+      DMP_Enabled               : Boolean := False;
+      DMP_Accelerometer_Enabled : Boolean := False;
+      DMP_Gyroscope_Enabled     : Boolean := False;
+      DMP_Quaternion_Enabled    : Boolean := False;
+      DMP_Gesture_Enabled       : Boolean := False;
+
+      FIFO_Packet_Size          : Interfaces.Unsigned_16 := 0;
+      --  Size of the FIFO packet to download and decode. It depends of
+      --  configuration of the sensor.
+
+      User_Bank                 : Boolean := False with Volatile;
+      Raw_Data                  : Raw_Data_Array;
       --  Two banks of collected information: one is used by the user, and
       --  another one asynchronous read handler. Banks are switched by the
       --  handler after successful load of new packet of data.
 
-      Buffer                : BBF.I2C.Unsigned_8_Array (1 .. 32);
+      Buffer                    : BBF.I2C.Unsigned_8_Array (1 .. 32);
       --  Storage for IO operations:
       --   - firmware upload buffer
+      --     - size should be power of two to avoid cross of bank boundary
       --   - FIFO packet buffer, size should be is enough to store
-      --    - accelerometer data (6 bytes)
-      --    - temperature data (2 bytes)
-      --    - gyroscope data (6 bytes)
+      --     - accelerometer data (6 bytes)
+      --     - temperature data (2 bytes)
+      --     - gyroscope data (6 bytes)
+      --   - DMP FIFO packet buffer, size should be is enough to store
+      --     - quaternion data (16 bytes)
+      --     - accelerometer data (6 bytes)
+      --     - gyroscope data (6 bytes)
+      --     - questure data (4 bytes)
    end record;
 
    procedure Internal_Initialize
@@ -490,5 +524,17 @@ private
       Address  : Interfaces.Unsigned_16;
       Success  : in out Boolean);
    --  Upload firmware to sensor. It is synchronous operation.
+
+   procedure Write_DMP_Memory
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Address : Interfaces.Unsigned_16;
+      Data    : BBF.I2C.Unsigned_8_Array;
+      Success : in out Boolean);
+
+   procedure Read_DMP_Memory
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Address : Interfaces.Unsigned_16;
+      Data    : out BBF.I2C.Unsigned_8_Array;
+      Success : in out Boolean);
 
 end BBF.Drivers.MPU;
