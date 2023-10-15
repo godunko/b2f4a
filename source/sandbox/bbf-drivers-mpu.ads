@@ -209,31 +209,35 @@ private
 
       type INT_ENABLE_Register is record
          RAW_RDY_EN                  : Boolean := False;
-         Reserved_1                  : Boolean := False;
+         DMP_INT_EN                  : Boolean := False;
          Reserved_2                  : Boolean := False;
          I2C_MST_INT_EN_FSYNC_INT_EN : Boolean := False;
          --  MPU6050: I2C_MST_INT
          --  MPU6500: FSYNC_INT_EN
          FIFO_OFLOW_EN               : Boolean := False;
-         Reserved_5                  : Boolean := False;
-         MPU6500_WOM_EN              : Boolean := False;
-         Reserved_7                  : Boolean := False;
+         DMP_ZMOT_EN                 : Boolean := False;
+         MPU6500_WOM_EN_DMP_MOT_EN   : Boolean := False;
+         --  MPU6500: Wake On Motion
+         --  DMP AN: Motion Detection
+         DMP_FF_EN                   : Boolean := False;
       end record
         with Pack, Object_Size => 8;
 
       --  INT_STATUS (58/3A)
 
-      type IN_STATUS_Register is record
-         DATA_RDY_INT : Boolean := False;
-         Reserved_1                  : Boolean := False;
-         Reserved_2                  : Boolean := False;
-         I2C_MST_INT_EN_FSYNC_INT_EN : Boolean := False;
+      type INT_STATUS_Register is record
+         DATA_RDY_INT               : Boolean := False;
+         DMP_INT                    : Boolean := False;
+         Reserved_2                 : Boolean := False;
+         I2C_MST_INT_FSYNC_INT      : Boolean := False;
          --  MPU6050: I2C_MST_INT
          --  MPU6500: FSYNC_INT_EN
-         FIFO_OFLOW_EN               : Boolean := False;
-         Reserved_5                  : Boolean := False;
-         MPU6500_WOM_EN              : Boolean := False;
-         Reserved_7                  : Boolean := False;
+         FIFO_OFLOW_INT             : Boolean := False;
+         DMP_ZMOT_INT               : Boolean := False;
+         MPU6500_WOM_EN_DPM_MOT_INT : Boolean := False;
+         --  MPU6500: Wake On Motion
+         --  DMP AN: Motion Detection
+         DMP_FF_INT                 : Boolean := False;
       end record
         with Pack, Object_Size => 8;
 
@@ -291,11 +295,11 @@ private
          SIG_COND_RESET : Boolean := False;
          I2C_MST_RESET  : Boolean := False;
          FIFO_RESET     : Boolean := False;
-         Reserved_3     : Boolean := False;
+         DMP_RESET      : Boolean := False;
          I2C_IF_DIS     : Boolean := False;
          I2C_MST_EN     : Boolean := False;
          FIFO_EN        : Boolean := False;
-         Reserved_7     : Boolean := False;
+         DMP_EN         : Boolean := False;
       end record
         with Pack, Object_Size => 8;
 

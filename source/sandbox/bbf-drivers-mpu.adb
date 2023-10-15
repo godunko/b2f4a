@@ -351,11 +351,12 @@ package body BBF.Drivers.MPU is
            (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
       end;
 
-      --  Reset FIFO
+      --  Reset FIFO (and DMP when enabled)
 
       declare
          USER_CTRL   : constant Registers.USER_CTRL_Register :=
            (FIFO_RESET => True,
+            DMP_RESET  => Self.DMP_Enabled,
             others     => False);
          USER_CTRL_B : constant Interfaces.Unsigned_8
            with Import, Address => USER_CTRL'Address;
@@ -365,31 +366,39 @@ package body BBF.Drivers.MPU is
            (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
       end;
 
-      --  Enable FIFO, interrupts and configure sensors to report
+      Delays.Delay_Milliseconds (50);
+
+      --  Enable FIFO (and DMP when used), interrupts and configure sensors to
+      --  report.
 
       declare
-         INT         : constant INT_Registers :=
-           (INT_PIN_CFG  =>
-              (ACTL             => True,
-               LATCH_INT_EN     => True,
-               INT_ANYRD_2CLEAR => True,
-               others           => <>),
-            INT_ENABLE   =>
-              (RAW_RDY_EN => True,
-               others     => False));
-         INT_B       : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
-           with Import, Address => INT'Address;
          USER_CTRL   : constant Registers.USER_CTRL_Register :=
            (FIFO_EN => True,
+            DMP_EN  => Self.DMP_Enabled,
             others  => False);
          USER_CTRL_B : constant Interfaces.Unsigned_8
            with Import, Address => USER_CTRL'Address;
+
+         INT         : constant INT_Registers :=
+           (INT_PIN_CFG  =>
+              (ACTL             => True,
+               LATCH_INT_EN     => False,
+               INT_ANYRD_2CLEAR => True,
+               others           => <>),
+            INT_ENABLE   =>
+              (RAW_RDY_EN => not Self.DMP_Enabled,
+               DMP_INT_EN => Self.DMP_Enabled,
+               others     => False));
+         INT_B       : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
+           with Import, Address => INT'Address;
+
          FIFO_EN     : constant Registers.FIFO_EN_Register :=
-           (ACCEL_FIFO_EN => Self.Accelerometer_Enabled,
-            XG_FIFO_EN    => Self.Gyroscope_Enabled,
-            YG_FIFO_EN    => Self.Gyroscope_Enabled,
-            ZG_FIFO_EN    => Self.Gyroscope_Enabled,
-            TEMP_FIFO_EN  => Self.Temperature_Enabled,
+           (ACCEL_FIFO_EN =>
+              Self.Accelerometer_Enabled and not Self.DMP_Enabled,
+            XG_FIFO_EN    => Self.Gyroscope_Enabled and not Self.DMP_Enabled,
+            YG_FIFO_EN    => Self.Gyroscope_Enabled and not Self.DMP_Enabled,
+            ZG_FIFO_EN    => Self.Gyroscope_Enabled and not Self.DMP_Enabled,
+            TEMP_FIFO_EN  => Self.Temperature_Enabled and not Self.DMP_Enabled,
             others        => False);
          FIFO_EN_B   : constant Interfaces.Unsigned_8
            with Import, Address => FIFO_EN'Address;
@@ -397,9 +406,6 @@ package body BBF.Drivers.MPU is
       begin
          Self.Bus.Write_Synchronous
            (Self.Device, USER_CTRL_Address, USER_CTRL_B, Success);
-
-         Delays.Delay_Milliseconds (50);
-
          Self.Bus.Write_Synchronous
            (Self.Device, INT_PIN_CFG_Address, INT_B, Success);
          Self.Bus.Write_Synchronous
@@ -631,13 +637,13 @@ package body BBF.Drivers.MPU is
    procedure On_INT_STATUS_Read (Closure : System.Address) is
       Self       : constant Conversions.Object_Pointer :=
         Conversions.To_Pointer (Closure);
-      INT_STATUS : constant Registers.IN_STATUS_Register
+      INT_STATUS : constant Registers.INT_STATUS_Register
         with Import, Address => Self.Buffer (1)'Address;
 
       Success    : Boolean := True;
 
    begin
-      if INT_STATUS.FIFO_OFLOW_EN then
+      if INT_STATUS.FIFO_OFLOW_INT then
          --  FIFO overflow, operations should be shutdown and FIFO is
          --  restarted.
          --  XXX Not implemented.
