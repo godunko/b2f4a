@@ -333,6 +333,26 @@ private
       end record
         with Pack, Object_Size => 8;
 
+      --  DMP: BANK_SEL (109..110/6D..6E)
+
+      type BANK_SEL_Register is record
+         Address : Interfaces.Unsigned_16;
+      end record
+        with Pack,
+             Object_Size          => 16,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
+      --  DMP: PRGM_START (112..113/70..71)
+
+      type PRGM_START_Register is record
+         Address : Interfaces.Unsigned_16;
+      end record
+        with Pack,
+             Object_Size          => 16,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
       --  FIFO_COUNT (114-115/72-73)
 
       type FIFO_COUNT_Register is record
@@ -377,7 +397,11 @@ private
    USER_CTRL_Address         : constant BBF.I2C.Internal_Address_8 := 16#6A#;
    PWR_MGMT_1_Address        : constant BBF.I2C.Internal_Address_8 := 16#6B#;
    PWR_MGMT_2_Address        : constant BBF.I2C.Internal_Address_8 := 16#6C#;
-
+   DMP_BANK_SEL_Address      : constant BBF.I2C.Internal_Address_8 := 16#6D#;
+   DMP_BANK_SEL_Length       : constant                            := 2;
+   DMP_MEM_R_W_Address       : constant BBF.I2C.Internal_Address_8 := 16#6F#;
+   DMP_PRGM_START_Address    : constant BBF.I2C.Internal_Address_8 := 16#70#;
+   DMP_PRGM_START_Length     : constant                            := 2;
    FIFO_COUNT_Address        : constant BBF.I2C.Internal_Address_8 := 16#72#;
    FIFO_COUNT_Length         : constant Interfaces.Unsigned_16     := 2;
    FIFO_R_W_Address          : constant BBF.I2C.Internal_Address_8 := 16#74#;
@@ -410,12 +434,13 @@ private
       --  another one asynchronous read handler. Banks are switched by the
       --  handler after successful load of new packet of data.
 
-      Buffer                : BBF.I2C.Unsigned_8_Array (1 .. 20);
-      --  FIFO packet IO buffer, size is enough to store
+      Buffer                : BBF.I2C.Unsigned_8_Array (1 .. 32);
+      --  Storage for IO operations:
+      --   - firmware upload buffer
+      --   - FIFO packet buffer, size should be is enough to store
       --    - accelerometer data (6 bytes)
       --    - temperature data (2 bytes)
       --    - gyroscope data (6 bytes)
-      --    - magnitometer data (6 bytes)
    end record;
 
    procedure Internal_Initialize
@@ -441,5 +466,16 @@ private
    function To_Angular_Velosity
      (Self : Abstract_MPU_Sensor'Class;
       Raw  : Interfaces.Integer_16) return Angular_Velosity;
+
+   -------------------
+   --  API for DMP  --
+   -------------------
+
+   procedure Upload_Firmware
+     (Self     : in out Abstract_MPU_Sensor'Class;
+      Firmware : BBF.I2C.Unsigned_8_Array;
+      Address  : Interfaces.Unsigned_16;
+      Success  : in out Boolean);
+   --  Upload firmware to sensor. It is synchronous operation.
 
 end BBF.Drivers.MPU;

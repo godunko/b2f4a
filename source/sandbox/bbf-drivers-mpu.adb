@@ -52,6 +52,20 @@ package body BBF.Drivers.MPU is
      new System.Address_To_Access_Conversions
            (Object => Abstract_MPU_Sensor'Class);
 
+   procedure Write_DMP_Memory
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Address : Interfaces.Unsigned_16;
+      Data    : BBF.I2C.Unsigned_8_Array;
+      Success : in out Boolean);
+
+   procedure Read_DMP_Memory
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Address : Interfaces.Unsigned_16;
+      Data    : out BBF.I2C.Unsigned_8_Array;
+      Success : in out Boolean);
+
+   DMP_Bank_Size : constant := 256;
+
    ---------------
    -- Configure --
    ---------------
@@ -576,6 +590,46 @@ package body BBF.Drivers.MPU is
          Success    => Success);
    end On_Interrupt;
 
+   ---------------------
+   -- Read_DMP_Memory --
+   ---------------------
+
+   procedure Read_DMP_Memory
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Address : Interfaces.Unsigned_16;
+      Data    : out BBF.I2C.Unsigned_8_Array;
+      Success : in out Boolean)
+   is
+      use type Interfaces.Unsigned_16;
+
+      BANK_SEL   : constant Registers.BANK_SEL_Register :=
+        (Address => Address);
+      BANK_SEL_B : constant BBF.I2C.Unsigned_8_Array (1 .. DMP_BANK_SEL_Length)
+        with Import, Address => BANK_SEL'Address;
+
+   begin
+      --  XXX Check that MPU is not in SLEEP state
+
+      if Address mod DMP_Bank_Size + Data'Length > DMP_Bank_Size then
+         --  Prevent write operation to write past the bank boundaries.
+
+         Success := False;
+
+         return;
+      end if;
+
+      Self.Bus.Write_Synchronous
+        (Self.Device,
+         DMP_BANK_SEL_Address,
+         BANK_SEL_B,
+         Success);
+      Self.Bus.Read_Synchronous
+        (Self.Device,
+         DMP_MEM_R_W_Address,
+         Data,
+         Success);
+   end Read_DMP_Memory;
+
    -------------------------
    -- To_Angular_Velosity --
    -------------------------
@@ -613,5 +667,109 @@ package body BBF.Drivers.MPU is
       return Convert (Interfaces.Integer_32 (Raw) * 8);
       --  XXX 8 must be replaced by configured value
    end To_Gravitational_Acceleration;
+
+   ---------------------
+   -- Upload_Firmware --
+   ---------------------
+
+   procedure Upload_Firmware
+     (Self     : in out Abstract_MPU_Sensor'Class;
+      Firmware : BBF.I2C.Unsigned_8_Array;
+      Address  : Interfaces.Unsigned_16;
+      Success  : in out Boolean)
+   is
+      use type BBF.I2C.Unsigned_8_Array;
+
+      PRGM_START   : constant Registers.PRGM_START_Register :=
+        (Address => Address);
+      PRGM_START_B : constant BBF.I2C.Unsigned_8_Array
+                                (1 .. DMP_PRGM_START_Length)
+        with Import, Address => PRGM_START'Address;
+
+      Max_Chunk : constant Positive := Self.Buffer'Length;
+      Current   : Positive          := Firmware'First;
+      Chunk     : Natural           := 0;
+
+   begin
+      loop
+         exit when not Success;
+         exit when Current > Firmware'Last;
+
+         Chunk := Natural'Min (Max_Chunk, Firmware'Last - Current + 1);
+
+         --  Copy chunk of data: when firmware is stored in the flash memory
+         --  it might be unaccessible by PDC.
+
+         Self.Buffer (1 .. Chunk) := Firmware (Current .. Current + Chunk - 1);
+
+         Self.Write_DMP_Memory
+           (Interfaces.Unsigned_16 (Current - 1),
+            Self.Buffer (1 .. Chunk),
+            Success);
+
+         --  Check that uploaded data match firmware
+
+         Self.Read_DMP_Memory
+           (Interfaces.Unsigned_16 (Current - 1),
+            Self.Buffer (1 .. Chunk),
+            Success);
+
+         if Firmware (Current .. Current + Chunk - 1)
+              /= Self.Buffer (1 .. Chunk)
+         then
+            Success := False;
+         end if;
+
+         Current := @ + Chunk;
+      end loop;
+
+      Self.Bus.Write_Synchronous
+        (Self.Device,
+         DMP_PRGM_START_Address,
+         PRGM_START_B,
+         Success);
+
+
+   end Upload_Firmware;
+
+   ----------------------
+   -- Write_DMP_Memory --
+   ----------------------
+
+   procedure Write_DMP_Memory
+     (Self    : in out Abstract_MPU_Sensor'Class;
+      Address : Interfaces.Unsigned_16;
+      Data    : BBF.I2C.Unsigned_8_Array;
+      Success : in out Boolean)
+   is
+      use type Interfaces.Unsigned_16;
+
+      BANK_SEL   : constant Registers.BANK_SEL_Register :=
+        (Address => Address);
+      BANK_SEL_B : constant BBF.I2C.Unsigned_8_Array (1 .. DMP_BANK_SEL_Length)
+        with Import, Address => BANK_SEL'Address;
+
+   begin
+      --  XXX Check that MPU is not in SLEEP state
+
+      if Address mod DMP_Bank_Size + Data'Length > DMP_Bank_Size then
+         --  Prevent write operation to write past the bank boundaries.
+
+         Success := False;
+
+         return;
+      end if;
+
+      Self.Bus.Write_Synchronous
+        (Self.Device,
+         DMP_BANK_SEL_Address,
+         BANK_SEL_B,
+         Success);
+      Self.Bus.Write_Synchronous
+        (Self.Device,
+         DMP_MEM_R_W_Address,
+         Data,
+         Success);
+   end Write_DMP_Memory;
 
 end BBF.Drivers.MPU;
