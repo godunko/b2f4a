@@ -423,13 +423,12 @@ package body BBF.Drivers.MPU is
         (if Self.Accelerometer_Enabled then 6 else 0)
           + (if Self.Gyroscope_Enabled then 6 else 0)
           + (if Self.Temperature_Enabled then 2 else 0);
-      Amount  : constant Interfaces.Unsigned_16 :=
-        Interfaces.Unsigned_16 (Self.Buffer (1)) * 256
-          + Interfaces.Unsigned_16 (Self.Buffer (2));
+      Amount  : constant Registers.FIFO_COUNT_Register
+        with Import, Address => Self.Buffer (1)'Address;
       Success : Boolean := True;
 
    begin
-      if Amount < Size then
+      if Amount.Value < Size then
          --  Not enough data available.
 
          return;
@@ -464,44 +463,44 @@ package body BBF.Drivers.MPU is
    begin
       if Self.Accelerometer_Enabled then
          declare
-            Aux : constant ACCEL_OUT_Register
+            Aux : constant Registers.ACCEL_OUT_Register
               with Import, Address => Self.Buffer'Address + Offset;
 
          begin
             Data.ACCEL := Aux;
-            Offset     := Offset + 6;
+            Offset     := Offset + ACCEL_OUT_Length;
          end;
 
       else
-         Data.ACCEL := (others => <>);
+         Data.ACCEL := (others => 0);
       end if;
 
       if Self.Temperature_Enabled then
          declare
-            Aux : constant TEMP_OUT_Register
+            Aux : constant Registers.TEMP_OUT_Register
               with Import, Address => Self.Buffer'Address + Offset;
 
          begin
             Data.TEMP := Aux;
-            Offset    := Offset + 2;
+            Offset    := Offset + TEMP_OUT_Length;
          end;
 
       else
-         Data.TEMP := (others => <>);
+         Data.TEMP := (others => 0);
       end if;
 
       if Self.Gyroscope_Enabled then
          declare
-            Aux : constant GYRO_OUT_Register
+            Aux : constant Registers.GYRO_OUT_Register
               with Import, Address => Self.Buffer'Address + Offset;
 
          begin
             Data.GYRO := Aux;
-            Offset    := Offset + 6;
+            Offset    := Offset + GYRO_OUT_Length;
          end;
 
       else
-         Data.GYRO := (others => <>);
+         Data.GYRO := (others => 0);
       end if;
 
       Data.Timestamp := Self.Clocks.Clock;
@@ -539,9 +538,9 @@ package body BBF.Drivers.MPU is
 
       Self.Bus.Read_Asynchronous
         (Device     => Self.Device,
-         Register   => FIFO_COUNT_H_Address,
+         Register   => FIFO_COUNT_Address,
          Data       => Self.Buffer (1)'Address,
-         Length     => 2,
+         Length     => FIFO_COUNT_Length,
          On_Success => On_FIFO_Count_Read'Access,
          On_Error   => null,
          Closure    => Closure,
@@ -583,8 +582,7 @@ package body BBF.Drivers.MPU is
 
    function To_Angular_Velosity
      (Self : Abstract_MPU_Sensor'Class;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Angular_Velosity
+      Raw  : Interfaces.Integer_16) return Angular_Velosity
    is
       use type Interfaces.Integer_32;
 
@@ -592,15 +590,9 @@ package body BBF.Drivers.MPU is
         new Ada.Unchecked_Conversion
               (Interfaces.Integer_32, Angular_Velosity);
 
-      B : constant Register_16 :=
-        (Is_Integer => False,
-         H          => H,
-         L          => L);
-      V : constant Interfaces.Integer_32 :=
-        Interfaces.Integer_32 (B.V) * 1_000 * 8;
-
    begin
-      return Convert (V);
+      return Convert (Interfaces.Integer_32 (Raw) * 1_000 * 8);
+      --  XXX 8 must be replaced by configured value
    end To_Angular_Velosity;
 
    -----------------------------------
@@ -609,8 +601,7 @@ package body BBF.Drivers.MPU is
 
    function To_Gravitational_Acceleration
      (Self : Abstract_MPU_Sensor'Class;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Gravitational_Acceleration
+      Raw  : Interfaces.Integer_16) return Gravitational_Acceleration
    is
       use type Interfaces.Integer_32;
 
@@ -618,14 +609,9 @@ package body BBF.Drivers.MPU is
         new Ada.Unchecked_Conversion
               (Interfaces.Integer_32, Gravitational_Acceleration);
 
-      B : constant Register_16 :=
-        (Is_Integer => False,
-         H          => H,
-         L          => L);
-      V : constant Interfaces.Integer_32 := Interfaces.Integer_32 (B.V) * 8;
-
    begin
-      return Convert (V);
+      return Convert (Interfaces.Integer_32 (Raw) * 8);
+      --  XXX 8 must be replaced by configured value
    end To_Gravitational_Acceleration;
 
 end BBF.Drivers.MPU;

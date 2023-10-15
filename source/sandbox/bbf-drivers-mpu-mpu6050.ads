@@ -48,7 +48,6 @@ private
 
    overriding function To_Temperature
      (Self : MPU6050_Sensor;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Temperature;
+      Raw  : Interfaces.Integer_16) return Temperature;
 
 end BBF.Drivers.MPU.MPU6050;

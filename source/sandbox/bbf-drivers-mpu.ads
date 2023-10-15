@@ -25,10 +25,12 @@ package BBF.Drivers.MPU is
    pragma Preelaborate;
 
    type Gravitational_Acceleration is
-     delta 1.0 / (2 ** 14) range -16.0 .. 16.0;
+     delta 1.0 / (2 ** 14) range -16.0 .. 16.0
+       with Size => 32;
 
    type Angular_Velosity is
-     delta 1.0 / (2 ** 15 * 1000 / 250) range -2_000.0 .. 2_000.0;
+     delta 1.0 / (2 ** 15 * 1000 / 250) range -2_000.0 .. 2_000.0
+       with Size => 32;
 
    type Temperature is delta 0.001 range -40.0 .. 85.0;
 
@@ -227,6 +229,40 @@ private
       end record
         with Pack, Object_Size => 8;
 
+      --  ACCEL_OUT (59..64/3B..40)
+
+      type ACCEL_OUT_Register is record
+         XOUT : Interfaces.Integer_16;
+         YOUT : Interfaces.Integer_16;
+         ZOUT : Interfaces.Integer_16;
+      end record
+        with Pack,
+             Object_Size          => 48,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
+      --  TEMP_OUT (65..66/41..42)
+
+      type TEMP_OUT_Register is record
+         TEMP_OUT : Interfaces.Integer_16;
+      end record
+        with Pack,
+             Object_Size          => 16,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
+      --  GYRO_OUT (67..72/43..48)
+
+      type GYRO_OUT_Register is record
+         XOUT : Interfaces.Integer_16;
+         YOUT : Interfaces.Integer_16;
+         ZOUT : Interfaces.Integer_16;
+      end record
+        with Pack,
+             Object_Size          => 48,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
       --  SIGNAL_PATH_RESET (104/68)
 
       type SIGNAL_PATH_RESET_Register is record
@@ -297,6 +333,16 @@ private
       end record
         with Pack, Object_Size => 8;
 
+      --  FIFO_COUNT (114-115/72-73)
+
+      type FIFO_COUNT_Register is record
+         Value : Interfaces.Unsigned_16;
+      end record
+        with Pack,
+             Object_Size          => 16,
+             Bit_Order            => System.High_Order_First,
+             Scalar_Storage_Order => System.High_Order_First;
+
    end Registers;
 
    --  AK8975_Address : constant BBF.I2C.Device_Address := 16#0C#;
@@ -319,11 +365,12 @@ private
 
    INT_STATUS_Address        : constant BBF.I2C.Internal_Address_8 := 16#3A#;
 
-   ACCEL_XOUT_H_Address      : constant BBF.I2C.Internal_Address_8 := 16#3B#;
-
-   TEMP_OUT_H_Address        : constant BBF.I2C.Internal_Address_8 := 16#41#;
-
-   GYRO_XOUT_H_Address       : constant BBF.I2C.Internal_Address_8 := 16#43#;
+   ACCEL_OUT_Address         : constant BBF.I2C.Internal_Address_8 := 16#3B#;
+   ACCEL_OUT_Length          : constant                            := 6;
+   TEMP_OUT_Address          : constant BBF.I2C.Internal_Address_8 := 16#41#;
+   TEMP_OUT_Length           : constant                            := 2;
+   GYRO_OUT_Address          : constant BBF.I2C.Internal_Address_8 := 16#43#;
+   GYRO_OUT_Length           : constant                            := 6;
 
    SIGNAL_PATH_RESET_Address : constant BBF.I2C.Internal_Address_8 := 16#68#;
 
@@ -331,44 +378,18 @@ private
    PWR_MGMT_1_Address        : constant BBF.I2C.Internal_Address_8 := 16#6B#;
    PWR_MGMT_2_Address        : constant BBF.I2C.Internal_Address_8 := 16#6C#;
 
-   FIFO_COUNT_H_Address      : constant BBF.I2C.Internal_Address_8 := 16#72#;
-   FIFO_COUNT_L_Address      : constant BBF.I2C.Internal_Address_8 := 16#73#;
+   FIFO_COUNT_Address        : constant BBF.I2C.Internal_Address_8 := 16#72#;
+   FIFO_COUNT_Length         : constant Interfaces.Unsigned_16     := 2;
    FIFO_R_W_Address          : constant BBF.I2C.Internal_Address_8 := 16#74#;
    WHO_AM_I_Address          : constant BBF.I2C.Internal_Address_8 := 16#75#;
 
-   type ACCEL_OUT_Register is record
-      ACCEL_XOUT_H : Interfaces.Integer_8  := 0;
-      ACCEL_XOUT_L : Interfaces.Unsigned_8 := 0;
-      ACCEL_YOUT_H : Interfaces.Integer_8  := 0;
-      ACCEL_YOUT_L : Interfaces.Unsigned_8 := 0;
-      ACCEL_ZOUT_H : Interfaces.Integer_8  := 0;
-      ACCEL_ZOUT_L : Interfaces.Unsigned_8 := 0;
-   end record
-     with Pack;
-
-   type TEMP_OUT_Register is record
-      TEMP_OUT_H : Interfaces.Integer_8  := 0;
-      TEMP_OUT_L : Interfaces.Unsigned_8 := 0;
-   end record
-     with Pack;
-
-   type GYRO_OUT_Register is record
-      GYRO_XOUT_H : Interfaces.Integer_8  := 0;
-      GYRO_XOUT_L : Interfaces.Unsigned_8 := 0;
-      GYRO_YOUT_H : Interfaces.Integer_8  := 0;
-      GYRO_YOUT_L : Interfaces.Unsigned_8 := 0;
-      GYRO_ZOUT_H : Interfaces.Integer_8  := 0;
-      GYRO_ZOUT_L : Interfaces.Unsigned_8 := 0;
-   end record
-     with Pack;
-
    type Raw_Data is record
-      ACCEL     : ACCEL_OUT_Register;
-      TEMP      : TEMP_OUT_Register;
-      GYRO      : GYRO_OUT_Register;
+      ACCEL     : Registers.ACCEL_OUT_Register;
+      TEMP      : Registers.TEMP_OUT_Register;
+      GYRO      : Registers.GYRO_OUT_Register;
       Timestamp : BBF.Clocks.Time;
    end record
-     with Pack;
+     with Object_Size => 176;
 
    type Raw_Data_Array is array (Boolean) of Raw_Data;
 
@@ -410,30 +431,15 @@ private
 
    not overriding function To_Temperature
      (Self : Abstract_MPU_Sensor;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Temperature is
+      Raw  : Interfaces.Integer_16) return Temperature is
         (raise Program_Error);
-
-   type Register_16 (Is_Integer : Boolean := False) is record
-      case Is_Integer is
-         when False =>
-            L : Interfaces.Unsigned_8;
-            H : Interfaces.Integer_8;
-
-         when True =>
-            V : Interfaces.Integer_16;
-      end case;
-   end record
-     with Unchecked_Union, Pack, Object_Size => 16;
 
    function To_Gravitational_Acceleration
      (Self : Abstract_MPU_Sensor'Class;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Gravitational_Acceleration;
+      Raw  : Interfaces.Integer_16) return Gravitational_Acceleration;
 
    function To_Angular_Velosity
      (Self : Abstract_MPU_Sensor'Class;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Angular_Velosity;
+      Raw  : Interfaces.Integer_16) return Angular_Velosity;
 
 end BBF.Drivers.MPU;

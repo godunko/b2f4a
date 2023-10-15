@@ -27,14 +27,11 @@ package body BBF.Drivers.MPU.MPU6050 is
    begin
       if Self.Accelerometer_Enabled then
          Data.Acceleration_X :=
-           Self.To_Gravitational_Acceleration
-             (Raw.ACCEL.ACCEL_XOUT_H, Raw.ACCEL.ACCEL_XOUT_L);
+           Self.To_Gravitational_Acceleration (Raw.ACCEL.XOUT);
          Data.Acceleration_Y :=
-           Self.To_Gravitational_Acceleration
-             (Raw.ACCEL.ACCEL_YOUT_H, Raw.ACCEL.ACCEL_YOUT_L);
+           Self.To_Gravitational_Acceleration (Raw.ACCEL.YOUT);
          Data.Acceleration_Z :=
-           Self.To_Gravitational_Acceleration
-             (Raw.ACCEL.ACCEL_ZOUT_H, Raw.ACCEL.ACCEL_ZOUT_L);
+           Self.To_Gravitational_Acceleration (Raw.ACCEL.ZOUT);
 
       else
          Data.Acceleration_X := 0.0;
@@ -44,22 +41,16 @@ package body BBF.Drivers.MPU.MPU6050 is
 
       if Self.Temperature_Enabled then
          Data.Temperature :=
-           Self.To_Temperature (Raw.TEMP.TEMP_OUT_H, Raw.TEMP.TEMP_OUT_L);
+           Self.To_Temperature (Raw.TEMP.TEMP_OUT);
 
       else
          Data.Temperature := 0.0;
       end if;
 
       if Self.Gyroscope_Enabled then
-         Data.Velocity_U :=
-           Self.To_Angular_Velosity
-             (Raw.GYRO.GYRO_XOUT_H, Raw.GYRO.GYRO_XOUT_L);
-         Data.Velocity_V :=
-           Self.To_Angular_Velosity
-             (Raw.GYRO.GYRO_YOUT_H, Raw.GYRO.GYRO_YOUT_L);
-         Data.Velocity_W :=
-           Self.To_Angular_Velosity
-             (Raw.GYRO.GYRO_ZOUT_H, Raw.GYRO.GYRO_ZOUT_L);
+         Data.Velocity_U := Self.To_Angular_Velosity (Raw.GYRO.XOUT);
+         Data.Velocity_V := Self.To_Angular_Velosity (Raw.GYRO.YOUT);
+         Data.Velocity_W := Self.To_Angular_Velosity (Raw.GYRO.ZOUT);
 
       else
          Data.Velocity_U := 0.0;
@@ -96,13 +87,9 @@ package body BBF.Drivers.MPU.MPU6050 is
 
    overriding function To_Temperature
      (Self : MPU6050_Sensor;
-      H    : Interfaces.Integer_8;
-      L    : Interfaces.Unsigned_8) return Temperature
-   is
-      V : constant Register_16 := (Is_Integer => False, H => H, L => L);
-
+      Raw  : Interfaces.Integer_16) return Temperature is
    begin
-      return Temperature (Float (V.V) / 340.0 + 36.53);
+      return Temperature (Float (Raw) / 340.0 + 36.53);
    end To_Temperature;
 
 end BBF.Drivers.MPU.MPU6050;
