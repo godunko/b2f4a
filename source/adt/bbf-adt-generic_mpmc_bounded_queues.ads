@@ -25,7 +25,8 @@ package BBF.ADT.Generic_MPMC_Bounded_Queues is
 
    type Index_Type is mod 2 ** 32;
 
-   type Queue (Capacity : Index_Type) is limited private;
+   type Queue (Capacity : Index_Type) is limited private
+     with Preelaborable_Initialization;
 
    function Enqueue
      (Self : in out Queue;
@@ -105,13 +106,14 @@ private
       Turn    : aliased Atomic_Index_Type := (Value => 0);
       Storage : Data_Type;
    end record
-     with Alignment => Hardware_Destructive_Interference_Size;
+     with Alignment => Hardware_Destructive_Interference_Size,
+          Preelaborable_Initialization;
 
    type Slot_Array is array (Index_Type range <>) of aliased Slot_Type;
 
    type Queue (Capacity : Index_Type) is record
-      Head  : aliased Aligned_Atomic_Index_Type;
-      Tail  : aliased Aligned_Atomic_Index_Type;
+      Head  : aliased Aligned_Atomic_Index_Type := (Value => 0);
+      Tail  : aliased Aligned_Atomic_Index_Type := (Value => 0);
 
       Slots : aliased Slot_Array (0 .. Capacity);
       --  Allocate one extra slot to prevent false sharing on the last slot

@@ -20,6 +20,8 @@ with BBF.I2C.Master;
 
 package BBF.Board.I2C is
 
+   pragma Preelaborate;
+
    I2C0 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class;
    I2C1 : constant not null access BBF.I2C.Master.I2C_Master_Controller'Class;
 

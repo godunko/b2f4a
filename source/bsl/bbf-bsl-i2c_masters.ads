@@ -34,7 +34,7 @@ package BBF.BSL.I2C_Masters is
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
       SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
       SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
-        limited new BBF.I2C.Master.I2C_Master_Controller with private;
+        limited new BBF.I2C.Master.I2C_Master_Controller with private with Preelaborable_Initialization;
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
 
