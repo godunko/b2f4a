@@ -98,7 +98,8 @@ private
       return Boolean;
 
    type Aligned_Atomic_Index_Type is new Atomic_Index_Type
-     with Alignment => Hardware_Destructive_Interference_Size;
+     with Alignment => Hardware_Destructive_Interference_Size,
+          Size      => 256;
 
    type Slot_Type is record
       Turn    : aliased Atomic_Index_Type := (Value => 0);
