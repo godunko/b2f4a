@@ -1,42 +1,13 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
---                                                                          --
---                        Runtime Library Component                         --
+--                           Bare Board Framework                           --
 --                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 package body BBF.Drivers.PCA9685 is
 
@@ -100,10 +71,6 @@ package body BBF.Drivers.PCA9685 is
       MODE2 : MODE2_Register;
    end record;
 
-   function Device_Address
-    (Self : PCA9685_Controller'Class) return BBF.I2C.Device_Address;
-   --  Returns device address on I2C bus.
-
    procedure On_Transmit_Done (Closure : System.Address);
 
    ---------------
@@ -111,7 +78,7 @@ package body BBF.Drivers.PCA9685 is
    ---------------
 
    procedure Configure
-     (Self      : in out PCA9685_Controller'Class;
+     (Self      : in out PCA9685_Controller_Driver'Class;
       Frequency : Interfaces.Unsigned_16;
       Success   : in out Boolean)
    is
@@ -164,7 +131,7 @@ package body BBF.Drivers.PCA9685 is
          Reserved_7 => False);  --  Default: FALSE
 
       Self.Bus.Write_Synchronous
-        (Self.Device_Address, MODE1_Address, MODE_Buffer, Success);
+        (Self.Device, MODE1_Address, MODE_Buffer, Success);
 
       if not Success then
          return;
@@ -173,7 +140,7 @@ package body BBF.Drivers.PCA9685 is
       --  Configure PRE_SCALE register.
 
       Self.Bus.Write_Synchronous
-       (Self.Device_Address, PRE_SCALE_Address, Scale, Success);
+       (Self.Device, PRE_SCALE_Address, Scale, Success);
 
       if not Success then
          return;
@@ -183,38 +150,26 @@ package body BBF.Drivers.PCA9685 is
 
       MODE.MODE1.SLEEP := False;
       Self.Bus.Write_Synchronous
-        (Self.Device_Address, MODE1_Address, MODE_Buffer (1 .. 1), Success);
+        (Self.Device, MODE1_Address, MODE_Buffer (1 .. 1), Success);
 
       if not Success then
          return;
       end if;
    end Configure;
 
-   --------------------
-   -- Device_Address --
-   --------------------
-
-   function Device_Address
-    (Self : PCA9685_Controller'Class) return BBF.I2C.Device_Address is
-   begin
-      --  XXX Address configuration is not supported yet.
-
-      return 16#40#;
-   end Device_Address;
-
    ----------------
    -- Initialize --
    ----------------
 
    procedure Initialize
-     (Self    : in out PCA9685_Controller'Class;
+     (Self    : in out PCA9685_Controller_Driver'Class;
       Success : in out Boolean) is
    begin
       Self.Initialized := False;
 
       --  Do controller's probe.
 
-      Success := Self.Bus.Probe (Self.Device_Address);
+      Success := Self.Bus.Probe (Self.Device);
 
       if not Success then
          return;
@@ -225,13 +180,13 @@ package body BBF.Drivers.PCA9685 is
       --  It is down by setting of bit 4 in ALL_LED_OFF_H register.
 
       declare
-         R : constant LED_OFF_H_Register :=
+         R : constant Registers.LED_OFF_H_Register :=
            (Count => 0, Off => True, others => False);
          B : BBF.I2C.Unsigned_8_Array (1 .. 1) with Address => R'Address;
 
       begin
          Self.Bus.Write_Synchronous
-           (Self.Device_Address, ALL_LED_OFF_H_Address, B, Success);
+           (Self.Device, ALL_LED_OFF_H_Address, B, Success);
 
          if not Success then
             return;
@@ -278,7 +233,7 @@ package body BBF.Drivers.PCA9685 is
             Reserved_7 => False);  --  Default: FALSE
 
          Self.Bus.Write_Synchronous
-           (Self.Device_Address, MODE1_Address, MODE_Buffer, Success);
+           (Self.Device, MODE1_Address, MODE_Buffer, Success);
 
          if not Success then
             return;
@@ -298,31 +253,33 @@ package body BBF.Drivers.PCA9685 is
       null;
    end On_Transmit_Done;
 
-   -------------------
-   -- Set_Something --
-   -------------------
+   ---------
+   -- Set --
+   ---------
 
-   procedure Set_Something
-     (Self    : in out PCA9685_Controller'Class;
-      Channel : Channel_Identifier;
-      Value   : Value_Type)
+   overriding procedure Set
+     (Self  : in out PCA9685_Channel_Driver;
+      On    : BBF.PCA9685.Value_Type;
+      Off   : BBF.PCA9685.Value_Type)
    is
       use type Interfaces.Unsigned_8;
+      use type BBF.PCA9685.Value_Type;
 
       Base    : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8 (Channel) * 4 + LED0_ON_L_Address;
+        Interfaces.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
       Success : Boolean := True;
 
    begin
-      Self.Buffer (Channel) :=
-        (LED_ON_L  => (Count => 0),
-         LED_ON_H  => (Count => 0, others => <>),
-         LED_OFF_L => (Count => LSB_Count (Value mod 256)),
-         LED_OFF_H => (Count => MSB_Count (Value / 256), others => <>));
-      Self.Bus.Write_Asynchronous
-        (Device     => Self.Device_Address,
+      Self.Controller.Buffer (Self.Channel) :=
+        (LED_ON_L  => (Count => Registers.LSB_Count (On mod 256)),
+         LED_ON_H  => (Count => Registers.MSB_Count (On / 256), others => <>),
+         LED_OFF_L => (Count => Registers.LSB_Count (Off mod 256)),
+         LED_OFF_H =>
+           (Count => Registers.MSB_Count (Off / 256), others => <>));
+      Self.Controller.Bus.Write_Asynchronous
+        (Device     => Self.Controller.Device,
          Register   => Base,
-         Data       => Self.Buffer (Channel)'Address,
+         Data       => Self.Controller.Buffer (Self.Channel)'Address,
          Length     => 4,
          On_Success => On_Transmit_Done'Access,
          On_Error   => On_Transmit_Done'Access,
@@ -332,6 +289,6 @@ package body BBF.Drivers.PCA9685 is
       if not Success then
          raise Program_Error;
       end if;
-   end Set_Something;
+   end Set;
 
 end BBF.Drivers.PCA9685;

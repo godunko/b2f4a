@@ -2,23 +2,30 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
---                                                                          --
 ------------------------------------------------------------------------------
 --
---  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--  Copyright (C) 2023, Vadim Godunko <vgodunko@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
 
---  Pulse Width Modulator (PWM)
+--  API of PCA9685 Driver: 16-channel, 12-bit PWM Fm+ I2C-bus LED controller
 
-pragma Restrictions (No_Elaboration_Code);
+with BBF.PWM;
 
-package BBF.PWM is
+package BBF.PCA9685 is
 
    pragma Pure;
 
-   type Channel is limited interface;
+   type Value_Type is mod 2**12;
 
-end BBF.PWM;
+   type PCA9685_Controller is limited interface;
+
+   type PCA9685_Channel is limited interface and BBF.PWM.Channel;
+
+   not overriding procedure Set
+     (Self : in out PCA9685_Channel;
+      On   : Value_Type;
+      Off  : Value_Type) is abstract;
+
+end BBF.PCA9685;
