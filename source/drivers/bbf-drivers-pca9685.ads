@@ -89,6 +89,9 @@ package BBF.Drivers.PCA9685 is
 
    overriding procedure Off (Self : in out PCA9685_Channel_Driver);
 
+   overriding function Tick_Duration
+     (Self : PCA9685_Channel_Driver) return BBF.PCA9685.Tick_Duration_Type;
+
    type PCA9685_Controller_Driver
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
       Device : BBF.I2C.Device_Address)
@@ -99,6 +102,9 @@ package BBF.Drivers.PCA9685 is
 
       Initialized : Boolean := False;
       --  Controller has been initialized.
+
+      Scale       : Interfaces.Unsigned_8 := 3;
+      --  Internal frequency scale factor
 
       Channel_00  : aliased
         PCA9685_Channel_Driver (PCA9685_Controller_Driver'Unchecked_Access, 0);
@@ -156,5 +162,8 @@ package BBF.Drivers.PCA9685 is
    overriding procedure On (Self : in out PCA9685_Controller_Driver);
 
    overriding procedure Off (Self : in out PCA9685_Controller_Driver);
+
+   overriding function Tick_Duration
+     (Self : PCA9685_Controller_Driver) return BBF.PCA9685.Tick_Duration_Type;
 
 end BBF.Drivers.PCA9685;

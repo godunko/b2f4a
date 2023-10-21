@@ -85,13 +85,6 @@ package body BBF.Drivers.PCA9685 is
    is
       use type Interfaces.Unsigned_16;
 
-      --  Equation (1) in 7.3.5 assume use of real numbers. Modified version is
-      --  used to produce same result with integer operations only.
-
-      Scale       : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8
-         ((Interfaces.Unsigned_16 (2 * OSC_CLOCK / 4_096) / Frequency - 1) / 2);
-
       MODE        : MODE_Register;
       MODE_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 2)
         with Address => MODE'Address;
@@ -140,8 +133,14 @@ package body BBF.Drivers.PCA9685 is
 
       --  Configure PRE_SCALE register.
 
+      Self.Scale :=
+        Interfaces.Unsigned_8
+         ((Interfaces.Unsigned_16 (2 * OSC_CLOCK / 4_096) / Frequency - 1) / 2);
+      --  Equation (1) in 7.3.5 assume use of real numbers. Modified version is
+      --  used to produce same result with integer operations only.
+
       Self.Bus.Write_Synchronous
-       (Self.Device, PRE_SCALE_Address, Scale, Success);
+       (Self.Device, PRE_SCALE_Address, Self.Scale, Success);
 
       if not Success then
          return;
@@ -426,5 +425,28 @@ package body BBF.Drivers.PCA9685 is
          raise Program_Error;
       end if;
    end Set;
+
+   -------------------
+   -- Tick_Duration --
+   -------------------
+
+   overriding function Tick_Duration
+     (Self : PCA9685_Channel_Driver) return BBF.PCA9685.Tick_Duration_Type is
+   begin
+      return Self.Controller.Tick_Duration;
+   end Tick_Duration;
+
+   -------------------
+   -- Tick_Duration --
+   -------------------
+
+   overriding function Tick_Duration
+     (Self : PCA9685_Controller_Driver) return BBF.PCA9685.Tick_Duration_Type
+   is
+      use type BBF.PCA9685.Tick_Duration_Type;
+
+   begin
+      return 1.0 / OSC_CLOCK * (Integer (Self.Scale) + 1);
+   end Tick_Duration;
 
 end BBF.Drivers.PCA9685;
