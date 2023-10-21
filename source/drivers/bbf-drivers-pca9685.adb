@@ -16,6 +16,7 @@ package body BBF.Drivers.PCA9685 is
 
    MODE1_Address         : constant BBF.I2C.Internal_Address_8 := 16#00#;
    LED0_ON_L_Address     : constant BBF.I2C.Internal_Address_8 := 16#06#;
+   ALL_LED_ON_H_Address  : constant BBF.I2C.Internal_Address_8 := 16#FA#;
    ALL_LED_OFF_H_Address : constant BBF.I2C.Internal_Address_8 := 16#FD#;
    PRE_SCALE_Address     : constant BBF.I2C.Internal_Address_8 := 16#FE#;
 
@@ -244,6 +245,140 @@ package body BBF.Drivers.PCA9685 is
       Self.Initialized := True;
    end Initialize;
 
+   ---------
+   -- Off --
+   ---------
+
+   overriding procedure Off (Self : in out PCA9685_Channel_Driver) is
+      use type Interfaces.Unsigned_8;
+      use type BBF.PCA9685.Value_Type;
+
+      Base    : constant Interfaces.Unsigned_8 :=
+        Interfaces.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Success : Boolean := True;
+
+   begin
+      Self.Controller.Buffer (Self.Channel) :=
+        (LED_ON_L  => (Count => 0),
+         LED_ON_H  => (Count => 0, On => False, others => <>),
+         LED_OFF_L => (Count => 0),
+         LED_OFF_H => (Count => 0, Off => True, others => <>));
+      Self.Controller.Bus.Write_Asynchronous
+        (Device     => Self.Controller.Device,
+         Register   => Base,
+         Data       => Self.Controller.Buffer (Self.Channel)'Address,
+         Length     => 4,
+         On_Success => On_Transmit_Done'Access,
+         On_Error   => On_Transmit_Done'Access,
+         Closure    => Self'Address,
+         Success    => Success);
+
+      if not Success then
+         raise Program_Error;
+      end if;
+   end Off;
+
+   ---------
+   -- Off --
+   ---------
+
+   overriding procedure Off (Self : in out PCA9685_Controller_Driver) is
+      Value   : constant Registers.LEDXX_Register :=
+        (LED_ON_L  => (Count => 0),
+         LED_ON_H  => (Count => 0, On => False, others => <>),
+         LED_OFF_L => (Count => 0),
+         LED_OFF_H => (Count => 0, Off => True, others => <>));
+      Success : Boolean := True;
+
+   begin
+      for J in Self.Buffer'Range loop
+         Self.Buffer (J) := Value;
+      end loop;
+
+      Self.Bus.Write_Asynchronous
+        (Device     => Self.Device,
+         Register   => ALL_LED_ON_H_Address,
+         Data       => Self.Buffer (Self.Buffer'First)'Address,
+         --  Operation is asynchronous, and Value is local variable and can't
+         --  be used.
+         Length     => 4,
+         On_Success => null,
+         On_Error   => null,
+         Closure    => System.Null_Address,
+         Success    => Success);
+
+      if not Success then
+         raise Program_Error;
+      end if;
+   end Off;
+
+   --------
+   -- On --
+   --------
+
+   overriding procedure On (Self : in out PCA9685_Channel_Driver) is
+      use type Interfaces.Unsigned_8;
+      use type BBF.PCA9685.Value_Type;
+
+      Base    : constant Interfaces.Unsigned_8 :=
+        Interfaces.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Success : Boolean := True;
+
+   begin
+      Self.Controller.Buffer (Self.Channel) :=
+        (LED_ON_L  => (Count => 0),
+         LED_ON_H  => (Count => 0, On => True, others => <>),
+         LED_OFF_L => (Count => 0),
+         LED_OFF_H => (Count => 0, Off => False, others => <>));
+      Self.Controller.Bus.Write_Asynchronous
+        (Device     => Self.Controller.Device,
+         Register   => Base,
+         Data       => Self.Controller.Buffer (Self.Channel)'Address,
+         Length     => 4,
+         On_Success => On_Transmit_Done'Access,
+         On_Error   => On_Transmit_Done'Access,
+         Closure    => Self'Address,
+         Success    => Success);
+
+      if not Success then
+         raise Program_Error;
+      end if;
+   end On;
+
+   --------
+   -- On --
+   --------
+
+   overriding procedure On (Self : in out PCA9685_Controller_Driver) is
+      Value   : constant Registers.LEDXX_Register :=
+        (LED_ON_L  => (Count => 0),
+         LED_ON_H  => (Count => 0, On => True, others => <>),
+         LED_OFF_L => (Count => 0),
+         LED_OFF_H => (Count => 0, Off => False, others => <>));
+      Success : Boolean := True;
+
+   begin
+      for J in Self.Buffer'Range loop
+         Self.Buffer (J) := Value;
+      end loop;
+
+      Self.Bus.Write_Asynchronous
+        (Device     => Self.Device,
+         Register   => ALL_LED_ON_H_Address,
+         Data       => Self.Buffer (Self.Buffer'First)'Address,
+         --  Operation is asynchronous, and Value is local variable and can't
+         --  be used.
+         Length     => 4,
+         On_Success => null,
+         On_Error   => null,
+         Closure    => System.Null_Address,
+         Success    => Success);
+
+      if not Success then
+         raise Program_Error;
+      end if;
+   end On;
+
    ----------------------
    -- On_Transmit_Done --
    ----------------------
@@ -272,10 +407,11 @@ package body BBF.Drivers.PCA9685 is
    begin
       Self.Controller.Buffer (Self.Channel) :=
         (LED_ON_L  => (Count => Registers.LSB_Count (On mod 256)),
-         LED_ON_H  => (Count => Registers.MSB_Count (On / 256), others => <>),
+         LED_ON_H  =>
+           (Count => Registers.MSB_Count (On / 256), On => False, others => <>),
          LED_OFF_L => (Count => Registers.LSB_Count (Off mod 256)),
          LED_OFF_H =>
-           (Count => Registers.MSB_Count (Off / 256), others => <>));
+           (Count => Registers.MSB_Count (Off / 256), Off => False, others => <>));
       Self.Controller.Bus.Write_Asynchronous
         (Device     => Self.Controller.Device,
          Register   => Base,

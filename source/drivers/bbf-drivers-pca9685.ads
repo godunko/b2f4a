@@ -85,6 +85,10 @@ package BBF.Drivers.PCA9685 is
       On    : BBF.PCA9685.Value_Type;
       Off   : BBF.PCA9685.Value_Type);
 
+   overriding procedure On (Self : in out PCA9685_Channel_Driver);
+
+   overriding procedure Off (Self : in out PCA9685_Channel_Driver);
+
    type PCA9685_Controller_Driver
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
       Device : BBF.I2C.Device_Address)
@@ -148,5 +152,9 @@ package BBF.Drivers.PCA9685 is
    --
    --  @param Frequency
    --    Frequency of the PWM signal in Hz.
+
+   overriding procedure On (Self : in out PCA9685_Controller_Driver);
+
+   overriding procedure Off (Self : in out PCA9685_Controller_Driver);
 
 end BBF.Drivers.PCA9685;
