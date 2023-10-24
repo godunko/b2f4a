@@ -37,6 +37,7 @@ package BBF.Board is
    Pin_13_LED : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_20_SDA : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_21_SCL : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_23     : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_50     : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_52     : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_53     : constant not null access BBF.BSL.SAM.Pin'Class;
@@ -89,6 +90,8 @@ private
      := PIOB.Pin_12'Access;
    Pin_21_SCL : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_13'Access;
+   Pin_23     : constant not null access BBF.BSL.SAM.Pin'Class
+     := PIOA.Pin_14'Access;
    Pin_50     : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOC.Pin_13'Access;
    Pin_52     : constant not null access BBF.BSL.SAM.Pin'Class
