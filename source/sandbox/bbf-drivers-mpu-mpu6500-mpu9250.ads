@@ -17,7 +17,8 @@ package BBF.Drivers.MPU.MPU6500.MPU9250 is
 
    pragma Preelaborate;
 
-   type MPU9250_Sensor is new Abstract_MPU_Sensor with private;
+   type MPU9250_Sensor is
+     new Abstract_MPU_Sensor with private with Preelaborable_Initialization;
 
    procedure Initialize
      (Self    : in out MPU9250_Sensor;

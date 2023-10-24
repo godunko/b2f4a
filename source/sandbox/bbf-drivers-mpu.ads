@@ -18,6 +18,7 @@ private with Interfaces;
 
 with BBF.Clocks;
 with BBF.Delays;
+with BBF.External_Interrupts;
 with BBF.I2C.Master;
 
 package BBF.Drivers.MPU is
@@ -38,6 +39,7 @@ package BBF.Drivers.MPU is
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
       Device : BBF.I2C.Device_Address;
       --  Default device address is 16#68#. Sensor can be configured to 16#69#.
+      Pin    : not null access BBF.External_Interrupts.Pin'Class;
       Clocks : not null access BBF.Clocks.Real_Time_Clock_Controller'Class)
        is abstract tagged limited private;
 
@@ -451,6 +453,7 @@ private
    type Abstract_MPU_Sensor
      (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
       Device : BBF.I2C.Device_Address;
+      Pin    : not null access BBF.External_Interrupts.Pin'Class;
       Clocks : not null access BBF.Clocks.Real_Time_Clock_Controller'Class)
    is abstract tagged limited record
       Initialized               : Boolean := False;

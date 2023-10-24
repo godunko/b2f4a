@@ -18,7 +18,6 @@ with System.Storage_Elements;
 with BBF.Board;
 with BBF.Drivers.MPU.DMP612;
 with BBF.External_Interrupts;
-with BBF.HPL.PMC;  --  XXX Need to be removed.
 
 package body BBF.Drivers.MPU is
 
@@ -426,12 +425,9 @@ package body BBF.Drivers.MPU is
 
       --  Configure pin to generate interrupts
 
-      BBF.HPL.PMC.Enable_Peripheral_Clock (BBF.HPL.Parallel_IO_Controller_C);
-      --  XXX Must be moved out!
-
-      BBF.Board.Pin_50.Configure (BBF.External_Interrupts.Falling_Edge);
-      BBF.Board.Pin_50.Set_Handler (On_Interrupt'Access, Self'Address);
-      BBF.Board.Pin_50.Enable_Interrupt;
+      Self.Pin.Configure (BBF.External_Interrupts.Falling_Edge);
+      Self.Pin.Set_Handler (On_Interrupt'Access, Self'Address);
+      Self.Pin.Enable_Interrupt;
    end Enable;
 
    -------------------------
