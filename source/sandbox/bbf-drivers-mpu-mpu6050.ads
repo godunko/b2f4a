@@ -27,7 +27,8 @@ package BBF.Drivers.MPU.MPU6050 is
       Temperature    : MPU.Temperature;
    end record;
 
-   type MPU6050_Sensor is new Abstract_MPU_Sensor with private;
+   type MPU6050_Sensor is
+     new Abstract_MPU_Sensor with private with Preelaborable_Initialization;
 
    not overriding procedure Initialize
      (Self    : in out MPU6050_Sensor;

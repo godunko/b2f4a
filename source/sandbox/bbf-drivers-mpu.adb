@@ -311,7 +311,9 @@ package body BBF.Drivers.MPU is
 
       --  BLACK MAGIC!
 
+      DMP612.Upload_Firmware (Self, Success);
       DMP612.Set_FIFO_Rate (Self, FIFO_Rate);
+      DMP612.Set_Interrupt_Mode (Self, DMP612.Continuous);
       DMP612.Enable_Features
         (Self                  => Self,
          Accelerometer         => DMP612.Raw,
