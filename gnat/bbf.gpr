@@ -12,7 +12,8 @@
 project BBF is
 
    for Target use "arm-eabi";
-   for Runtime ("Ada") use "light-arduino_due_x";
+   for Runtime ("Ada") use "light-tasking-arduino_due_x";
+
    for Object_Dir use "../.objs";
    for Source_Dirs use ("../source",
                         "../source/adt",
@@ -24,7 +25,12 @@ project BBF is
 
    package Compiler is
       for Switches ("Ada")
-        use ("-gnat2022", "-O2", "-ffunction-sections", "-fdata-sections", "-flto");
+        use ("-g",
+             "-gnat2022",
+             "-O2",
+             "-ffunction-sections",
+             "-fdata-sections",
+             "-flto");
    end Compiler;
 
 end BBF;
