@@ -18,7 +18,7 @@ with BBF.HPL.NVIC;
 with BBF.HPL.PMC;
 with BBF.HPL.TWI;
 
-package body BBF.BSL.I2C_Masters is
+package body BBF.BSL.SAM3_I2C_Masters is
 
    procedure TWI0_Handler
      with Export,
@@ -568,4 +568,4 @@ package body BBF.BSL.I2C_Masters is
         Success);
    end Write_Synchronous;
 
-end BBF.BSL.I2C_Masters;
+end BBF.BSL.SAM3_I2C_Masters;

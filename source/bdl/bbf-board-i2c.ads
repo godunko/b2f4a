@@ -13,7 +13,7 @@
 
 --  I2C interfaces for Arduino Due/X board
 
-private with BBF.BSL.I2C_Masters;
+private with BBF.BSL.SAM3_I2C_Masters;
 private with BBF.HPL.PIO;
 private with BBF.HRI.TWI;
 with BBF.I2C.Master;
@@ -30,14 +30,14 @@ package BBF.Board.I2C is
 
 private
 
-   TWI0_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
+   TWI0_I2C : aliased BBF.BSL.SAM3_I2C_Masters.SAM3_I2C_Master_Controller
      (Controller   => BBF.HRI.TWI.TWI0_Periph'Access,
       Peripheral   => BBF.HPL.Two_Wire_Interface_0,
       SCL          => PIOA.Pin_18'Access,
       SCL_Function => BBF.HPL.PIO.A,
       SDA          => PIOA.Pin_17'Access,
       SDA_Function => BBF.HPL.PIO.A);
-   TWI1_I2C : aliased BBF.BSL.I2C_Masters.SAM3_I2C_Master_Controller
+   TWI1_I2C : aliased BBF.BSL.SAM3_I2C_Masters.SAM3_I2C_Master_Controller
      (Controller   => BBF.HRI.TWI.TWI1_Periph'Access,
       Peripheral   => BBF.HPL.Two_Wire_Interface_1,
       SCL          => PIOB.Pin_13'Access,

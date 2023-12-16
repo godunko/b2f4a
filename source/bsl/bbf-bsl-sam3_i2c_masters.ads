@@ -23,7 +23,7 @@ with BBF.HPL.PIO;
 with BBF.HRI.TWI;
 with BBF.I2C.Master;
 
-package BBF.BSL.I2C_Masters is
+package BBF.BSL.SAM3_I2C_Masters is
 
    pragma Preelaborate;
 
@@ -75,7 +75,7 @@ private
    type Operation is (None, Read, Write);
 
    type Operation_Record
-     (Operation : BBF.BSL.I2C_Masters.Operation := None) is
+     (Operation : BBF.BSL.SAM3_I2C_Masters.Operation := None) is
    record
       case Operation is
          when None =>
@@ -133,4 +133,4 @@ private
       Closure    : System.Address;
       Success    : in out Boolean);
 
-end BBF.BSL.I2C_Masters;
+end BBF.BSL.SAM3_I2C_Masters;
