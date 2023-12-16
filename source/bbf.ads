@@ -28,6 +28,7 @@ package BBF is
 
    type Unsigned_8_Array_16 is array (Unsigned_16 range <>) of Unsigned_8;
    subtype Byte_Array_16 is Unsigned_8_Array_16;
+   --  This type is used as data buffer for I/O operations.
 
    type Callback is access procedure (Closure : System.Address);
    --  Callback function.

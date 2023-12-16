@@ -29,7 +29,7 @@ package BBF.I2C.Master is
       Device     : BBF.I2C.Device_Address;
       Register   : BBF.I2C.Internal_Address_8;
       Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
+      Length     : BBF.Unsigned_16;
       On_Success : BBF.Callback;
       On_Error   : BBF.Callback;
       Closure    : System.Address;
@@ -56,7 +56,7 @@ package BBF.I2C.Master is
       Device     : BBF.I2C.Device_Address;
       Register   : BBF.I2C.Internal_Address_8;
       Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
+      Length     : BBF.Unsigned_16;
       On_Success : BBF.Callback;
       On_Error   : BBF.Callback;
       Closure    : System.Address;
@@ -87,7 +87,7 @@ package BBF.I2C.Master is
      (Self             : in out I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : BBF.I2C.Internal_Address_8;
-      Data             : Interfaces.Unsigned_8;
+      Data             : BBF.Unsigned_8;
       Success          : out Boolean) is abstract;
    --  Write multiple bytes to a I2C slave device.
    --
@@ -98,7 +98,7 @@ package BBF.I2C.Master is
      (Self             : in out I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : BBF.I2C.Internal_Address_8;
-      Data             : BBF.I2C.Unsigned_8_Array;
+      Data             : BBF.Unsigned_8_Array_16;
       Success          : out Boolean) is abstract;
    --  Write multiple bytes to a I2C slave device.
    --
@@ -109,7 +109,7 @@ package BBF.I2C.Master is
      (Self             : in out I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Interfaces.Unsigned_8;
+      Data             : out BBF.Unsigned_8;
       Success          : out Boolean) is abstract;
    --  Read multiple bytes from a TWI compatible slave device.
    --
@@ -120,7 +120,7 @@ package BBF.I2C.Master is
      (Self             : in out I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
-      Data             : out BBF.I2C.Unsigned_8_Array;
+      Data             : out BBF.Unsigned_8_Array_16;
       Success          : out Boolean) is abstract;
    --  Read multiple bytes from a TWI compatible slave device.
    --

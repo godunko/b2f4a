@@ -373,7 +373,7 @@ private
       --  FIFO_COUNT (114-115/72-73)
 
       type FIFO_COUNT_Register is record
-         Value : Interfaces.Unsigned_16;
+         Value : BBF.Unsigned_16;
       end record
         with Pack,
              Object_Size          => 16,
@@ -433,7 +433,7 @@ private
    DMP_PRGM_START_Address    : constant BBF.I2C.Internal_Address_8 := 16#70#;
    DMP_PRGM_START_Length     : constant                            := 2;
    FIFO_COUNT_Address        : constant BBF.I2C.Internal_Address_8 := 16#72#;
-   FIFO_COUNT_Length         : constant Interfaces.Unsigned_16     := 2;
+   FIFO_COUNT_Length         : constant                            := 2;
    FIFO_R_W_Address          : constant BBF.I2C.Internal_Address_8 := 16#74#;
    WHO_AM_I_Address          : constant BBF.I2C.Internal_Address_8 := 16#75#;
 
@@ -468,7 +468,7 @@ private
       DMP_Quaternion_Enabled    : Boolean := False;
       DMP_Gesture_Enabled       : Boolean := False;
 
-      FIFO_Packet_Size          : Interfaces.Unsigned_16 := 0;
+      FIFO_Packet_Size          : BBF.Unsigned_16 := 0;
       --  Size of the FIFO packet to download and decode. It depends of
       --  configuration of the sensor.
 
@@ -478,7 +478,7 @@ private
       --  another one asynchronous read handler. Banks are switched by the
       --  handler after successful load of new packet of data.
 
-      Buffer                    : BBF.I2C.Unsigned_8_Array (1 .. 32);
+      Buffer                    : BBF.Unsigned_8_Array_16 (1 .. 32);
       --  Storage for IO operations:
       --   - firmware upload buffer
       --     - size should be power of two to avoid cross of bank boundary
@@ -496,7 +496,7 @@ private
    procedure Internal_Initialize
      (Self    : in out Abstract_MPU_Sensor'Class;
       Delays  : not null access BBF.Delays.Delay_Controller'Class;
-      WHOAMI  : Interfaces.Unsigned_8;
+      WHOAMI  : BBF.Unsigned_8;
       Success : in out Boolean);
    --  First step of the initialization procedure. Probe controller and check
    --  chip identifier.
@@ -523,7 +523,7 @@ private
 
    procedure Upload_Firmware
      (Self     : in out Abstract_MPU_Sensor'Class;
-      Firmware : BBF.I2C.Unsigned_8_Array;
+      Firmware : BBF.Unsigned_8_Array_16;
       Address  : Interfaces.Unsigned_16;
       Success  : in out Boolean);
    --  Upload firmware to sensor. It is synchronous operation.
@@ -531,13 +531,13 @@ private
    procedure Write_DMP_Memory
      (Self    : in out Abstract_MPU_Sensor'Class;
       Address : Interfaces.Unsigned_16;
-      Data    : BBF.I2C.Unsigned_8_Array;
+      Data    : BBF.Unsigned_8_Array_16;
       Success : in out Boolean);
 
    procedure Read_DMP_Memory
      (Self    : in out Abstract_MPU_Sensor'Class;
       Address : Interfaces.Unsigned_16;
-      Data    : out BBF.I2C.Unsigned_8_Array;
+      Data    : out BBF.Unsigned_8_Array_16;
       Success : in out Boolean);
 
 end BBF.Drivers.MPU;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
+--                           Hardware Proxy Layer                           --
 --                                                                          --
 ------------------------------------------------------------------------------
 --
@@ -49,8 +49,6 @@ package BBF.HPL.TWI is
    function TWI0 return TWI;
    function TWI1 return TWI;
 
-   type Unsigned_8_Array is array (Positive range <>) of Interfaces.Unsigned_8;
-
    procedure Initialize_Master
      (Self                 : TWI;
       Main_Clock_Frequency : Interfaces.Unsigned_32;
@@ -73,13 +71,13 @@ package BBF.HPL.TWI is
    procedure Set_Receive_Buffer
      (Self   : TWI;
       Buffer : System.Address;
-      Length : Interfaces.Unsigned_16) with Inline;
+      Length : BBF.Unsigned_16) with Inline;
    --  Set buffer to receive data.
 
    procedure Set_Transmission_Buffer
      (Self   : TWI;
       Buffer : System.Address;
-      Length : Interfaces.Unsigned_16) with Inline;
+      Length : BBF.Unsigned_16) with Inline;
    --  Set buffer to transmit data.
 
    procedure Enable_Receive_Buffer (Self : TWI) with Inline;
@@ -143,8 +141,8 @@ package BBF.HPL.TWI is
    procedure Master_Write_Synchronous
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : Interfaces.Unsigned_8;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : BBF.Unsigned_8;
       Success          : out Boolean);
    --  Write multiple bytes to a TWI compatible slave device.
    --
@@ -154,8 +152,8 @@ package BBF.HPL.TWI is
    procedure Master_Write_Synchronous
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : Unsigned_8_Array;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : BBF.Unsigned_8_Array_16;
       Success          : out Boolean);
    --  Write multiple bytes to a TWI compatible slave device.
    --
@@ -165,8 +163,8 @@ package BBF.HPL.TWI is
    procedure Master_Read_Synchronous
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Interfaces.Unsigned_8;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : out BBF.Unsigned_8;
       Success          : out Boolean);
    --  Read multiple bytes from a TWI compatible slave device.
    --
@@ -176,8 +174,8 @@ package BBF.HPL.TWI is
    procedure Master_Read_Synchronous
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Unsigned_8_Array;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : out BBF.Unsigned_8_Array_16;
       Success          : out Boolean);
    --  Read multiple bytes from a TWI compatible slave device.
    --

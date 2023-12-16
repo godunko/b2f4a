@@ -46,28 +46,28 @@ package BBF.BSL.SAM3_I2C_Masters is
     (Self             : in out SAM3_I2C_Master_Controller;
      Address          : BBF.I2C.Device_Address;
      Internal_Address : BBF.I2C.Internal_Address_8;
-     Data             : Interfaces.Unsigned_8;
+     Data             : BBF.Unsigned_8;
      Success          : out Boolean);
 
    overriding procedure Write_Synchronous
     (Self             : in out SAM3_I2C_Master_Controller;
      Address          : BBF.I2C.Device_Address;
      Internal_Address : BBF.I2C.Internal_Address_8;
-     Data             : BBF.I2C.Unsigned_8_Array;
+     Data             : BBF.Unsigned_8_Array_16;
      Success          : out Boolean);
 
    overriding procedure Read_Synchronous
     (Self             : in out SAM3_I2C_Master_Controller;
      Address          : BBF.I2C.Device_Address;
-     Internal_Address : Interfaces.Unsigned_8;
-     Data             : out Interfaces.Unsigned_8;
+     Internal_Address : BBF.I2C.Internal_Address_8;
+     Data             : out BBF.Unsigned_8;
      Success          : out Boolean);
 
    overriding procedure Read_Synchronous
     (Self             : in out SAM3_I2C_Master_Controller;
      Address          : BBF.I2C.Device_Address;
-     Internal_Address : Interfaces.Unsigned_8;
-     Data             : out BBF.I2C.Unsigned_8_Array;
+     Internal_Address : BBF.I2C.Internal_Address_8;
+     Data             : out BBF.Unsigned_8_Array_16;
      Success          : out Boolean);
 
 private
@@ -85,7 +85,7 @@ private
             Device     : BBF.I2C.Device_Address;
             Register   : BBF.I2C.Internal_Address_8;
             Data       : System.Address;
-            Length     : Interfaces.Unsigned_16;
+            Length     : BBF.Unsigned_16;
             On_Success : BBF.Callback;
             On_Error   : BBF.Callback;
             Closure    : System.Address;
@@ -116,7 +116,7 @@ private
       Device     : BBF.I2C.Device_Address;
       Register   : BBF.I2C.Internal_Address_8;
       Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
+      Length     : BBF.Unsigned_16;
       On_Success : BBF.Callback;
       On_Error   : BBF.Callback;
       Closure    : System.Address;
@@ -127,7 +127,7 @@ private
       Device     : BBF.I2C.Device_Address;
       Register   : BBF.I2C.Internal_Address_8;
       Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
+      Length     : BBF.Unsigned_16;
       On_Success : BBF.Callback;
       On_Error   : BBF.Callback;
       Closure    : System.Address;

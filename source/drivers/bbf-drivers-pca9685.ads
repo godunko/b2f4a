@@ -103,7 +103,7 @@ package BBF.Drivers.PCA9685 is
       Initialized : Boolean := False;
       --  Controller has been initialized.
 
-      Scale       : Interfaces.Unsigned_8 := 3;
+      Scale       : BBF.Unsigned_8 := 3;
       --  Internal frequency scale factor
 
       Channel_00  : aliased

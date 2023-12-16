@@ -1,44 +1,15 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
+--                           Bare Board Framework                           --
 --                                                                          --
 --                           Hardware Proxy Layer                           --
 --                                                                          --
---                        Runtime Library Component                         --
---                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019-2023, Vadim Godunko <vgodunko@gmail.com>                --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 with Ada.Unchecked_Conversion;
 
@@ -337,7 +308,7 @@ package body BBF.HPL.TWI is
    procedure Set_Receive_Buffer
      (Self   : TWI;
       Buffer : System.Address;
-      Length : Interfaces.Unsigned_16) is
+      Length : BBF.Unsigned_16) is
    begin
       Self.RPR :=
         BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Buffer));
@@ -351,7 +322,7 @@ package body BBF.HPL.TWI is
    procedure Set_Transmission_Buffer
      (Self   : TWI;
       Buffer : System.Address;
-      Length : Interfaces.Unsigned_16) is
+      Length : BBF.Unsigned_16) is
    begin
       Self.TPR :=
         BBF.HRI.UInt32 (System.Storage_Elements.To_Integer (Buffer));
@@ -478,10 +449,10 @@ package body BBF.HPL.TWI is
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Interfaces.Unsigned_8;
+      Data             : out BBF.Unsigned_8;
       Success          : out Boolean)
    is
-      Buffer : Unsigned_8_Array (1 .. 1)
+      Buffer : BBF.Unsigned_8_Array_16 (1 .. 1)
         with Import  => True,
              Address => Data'Address;
 
@@ -497,7 +468,7 @@ package body BBF.HPL.TWI is
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Unsigned_8_Array;
+      Data             : out BBF.Unsigned_8_Array_16;
       Success          : out Boolean)
    is
       SR : BBF.HRI.TWI.TWI0_SR_Register;
@@ -550,7 +521,7 @@ package body BBF.HPL.TWI is
             exit when SR.RXRDY;
          end loop;
 
-         Data (Index) := Interfaces.Unsigned_8 (Self.RHR.RXDATA);
+         Data (Index) := BBF.Unsigned_8 (Self.RHR.RXDATA);
       end loop;
 
       loop
@@ -569,11 +540,11 @@ package body BBF.HPL.TWI is
    procedure Master_Write_Synchronous
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : Interfaces.Unsigned_8;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : BBF.Unsigned_8;
       Success          : out Boolean)
    is
-      Buffer : Unsigned_8_Array (1 .. 1)
+      Buffer : BBF.Unsigned_8_Array_16 (1 .. 1)
         with Import  => True,
              Address => Data'Address;
 
@@ -590,7 +561,7 @@ package body BBF.HPL.TWI is
      (Self             : TWI;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : Interfaces.Unsigned_8;
-      Data             : Unsigned_8_Array;
+      Data             : BBF.Unsigned_8_Array_16;
       Success          : out Boolean)
    is
       SR : BBF.HRI.TWI.TWI0_SR_Register;

@@ -151,7 +151,7 @@ package body BBF.BSL.SAM3_I2C_Masters is
 
       if BBF.HPL.TWI.Is_Receive_Holding_Register_Ready (Status) then
          declare
-            Data : BBF.I2C.Unsigned_8_Array (1 .. Integer (Self.Current.Length))
+            Data : BBF.Unsigned_8_Array_16 (1 .. Self.Current.Length)
               with Address => Self.Current.Data;
 
          begin
@@ -159,7 +159,7 @@ package body BBF.BSL.SAM3_I2C_Masters is
                --  Store last byte
 
                Data (Data'Last) :=
-                 Interfaces.Unsigned_8 (Self.Controller.RHR.RXDATA);
+                 BBF.Unsigned_8 (Self.Controller.RHR.RXDATA);
 
                --  Disable interrupt and wait till transmission completed
 
@@ -170,7 +170,7 @@ package body BBF.BSL.SAM3_I2C_Masters is
                --  Store last but one byte
 
                Data (Data'Last - 1) :=
-                 Interfaces.Unsigned_8 (Self.Controller.RHR.RXDATA);
+                 BBF.Unsigned_8 (Self.Controller.RHR.RXDATA);
 
                --  Send STOP condition.
 
@@ -399,7 +399,7 @@ package body BBF.BSL.SAM3_I2C_Masters is
       Device     : BBF.I2C.Device_Address;
       Register   : BBF.I2C.Internal_Address_8;
       Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
+      Length     : BBF.Unsigned_16;
       On_Success : BBF.Callback;
       On_Error   : BBF.Callback;
       Closure    : System.Address;
@@ -443,8 +443,8 @@ package body BBF.BSL.SAM3_I2C_Masters is
    overriding procedure Read_Synchronous
      (Self             : in out SAM3_I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out Interfaces.Unsigned_8;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : out BBF.Unsigned_8;
       Success          : out Boolean) is
    begin
       BBF.HPL.TWI.Master_Read_Synchronous
@@ -458,15 +458,15 @@ package body BBF.BSL.SAM3_I2C_Masters is
    overriding procedure Read_Synchronous
      (Self             : in out SAM3_I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
-      Internal_Address : Interfaces.Unsigned_8;
-      Data             : out BBF.I2C.Unsigned_8_Array;
+      Internal_Address : BBF.I2C.Internal_Address_8;
+      Data             : out BBF.Unsigned_8_Array_16;
       Success          : out Boolean) is
    begin
       BBF.HPL.TWI.Master_Read_Synchronous
        (Self.Controller,
         Address,
         Internal_Address,
-        BBF.HPL.TWI.Unsigned_8_Array (Data),
+        Data,
         Success);
    end Read_Synchronous;
 
@@ -497,7 +497,7 @@ package body BBF.BSL.SAM3_I2C_Masters is
       Device     : BBF.I2C.Device_Address;
       Register   : BBF.I2C.Internal_Address_8;
       Data       : System.Address;
-      Length     : Interfaces.Unsigned_16;
+      Length     : BBF.Unsigned_16;
       On_Success : BBF.Callback;
       On_Error   : BBF.Callback;
       Closure    : System.Address;
@@ -542,7 +542,7 @@ package body BBF.BSL.SAM3_I2C_Masters is
      (Self             : in out SAM3_I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : BBF.I2C.Internal_Address_8;
-      Data             : Interfaces.Unsigned_8;
+      Data             : BBF.Unsigned_8;
       Success          : out Boolean) is
    begin
       BBF.HPL.TWI.Master_Write_Synchronous
@@ -557,14 +557,14 @@ package body BBF.BSL.SAM3_I2C_Masters is
      (Self             : in out SAM3_I2C_Master_Controller;
       Address          : BBF.I2C.Device_Address;
       Internal_Address : BBF.I2C.Internal_Address_8;
-      Data             : BBF.I2C.Unsigned_8_Array;
+      Data             : BBF.Unsigned_8_Array_16;
       Success          : out Boolean) is
    begin
       BBF.HPL.TWI.Master_Write_Synchronous
        (Self.Controller,
         Address,
         Internal_Address,
-        BBF.HPL.TWI.Unsigned_8_Array (Data),
+        Data,
         Success);
    end Write_Synchronous;
 

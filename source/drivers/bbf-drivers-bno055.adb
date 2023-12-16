@@ -1,42 +1,13 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                       Bare-Board Framework for Ada                       --
---                                                                          --
---                        Runtime Library Component                         --
+--                           Bare Board Framework                           --
 --                                                                          --
 ------------------------------------------------------------------------------
---                                                                          --
--- Copyright © 2019, Vadim Godunko <vgodunko@gmail.com>                     --
--- All rights reserved.                                                     --
---                                                                          --
--- Redistribution and use in source and binary forms, with or without       --
--- modification, are permitted provided that the following conditions       --
--- are met:                                                                 --
---                                                                          --
---  * Redistributions of source code must retain the above copyright        --
---    notice, this list of conditions and the following disclaimer.         --
---                                                                          --
---  * Redistributions in binary form must reproduce the above copyright     --
---    notice, this list of conditions and the following disclaimer in the   --
---    documentation and/or other materials provided with the distribution.  --
---                                                                          --
---  * Neither the name of the Vadim Godunko, IE nor the names of its        --
---    contributors may be used to endorse or promote products derived from  --
---    this software without specific prior written permission.              --
---                                                                          --
--- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS      --
--- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT        --
--- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR    --
--- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT     --
--- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,   --
--- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED --
--- TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   --
--- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   --
--- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     --
--- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       --
--- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             --
---                                                                          --
-------------------------------------------------------------------------------
+--
+--  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
 
 with Interfaces;
 
@@ -122,9 +93,7 @@ package body BBF.Drivers.BNO055 is
     (Self : in out BNO055_Sensor'Class;
      Mode : Operation_Mode)
    is
-      use type Interfaces.Unsigned_8;
-
-      CHIP_ID_Buffer : Interfaces.Unsigned_8;
+      CHIP_ID_Buffer : BBF.Unsigned_8;
       Success        : Boolean;
 
    begin
@@ -142,7 +111,7 @@ package body BBF.Drivers.BNO055 is
       declare
          Register : constant SYS_TRIGGER_Register
            := (CLK_SEL => True, others => <>);
-         Value    : Interfaces.Unsigned_8
+         Value    : BBF.Unsigned_8
            with Import     => True,
                 Convention => Ada,
                 Address    => Register'Address;
@@ -161,7 +130,7 @@ package body BBF.Drivers.BNO055 is
       declare
          Value  : constant OPR_MODE_Register
            := (Operation_Mode => Mode, others => <>);
-         Buffer : Interfaces.Unsigned_8
+         Buffer : BBF.Unsigned_8
            with Import     => True,
                 Convention => Ada,
                 Address    => Value'Address;
@@ -188,7 +157,7 @@ package body BBF.Drivers.BNO055 is
      Timestamp : out BBF.Clocks.Time)
    is
       Register : Gravity_Vector_Register;
-      Value    : BBF.I2C.Unsigned_8_Array (1 .. 6)
+      Value    : BBF.Unsigned_8_Array_16 (1 .. 6)
         with Import     => True,
              Convention => Ada,
              Address    => Register'Address;

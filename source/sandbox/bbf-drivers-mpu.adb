@@ -178,7 +178,7 @@ package body BBF.Drivers.MPU is
       use type Interfaces.Unsigned_16;
 
       CONFIG     : CONFIG_Resgisters;
-      CONFIG_B   : BBF.I2C.Unsigned_8_Array (1 .. 5)
+      CONFIG_B   : BBF.Unsigned_8_Array_16 (1 .. 5)
         with Import, Convention => Ada, Address => CONFIG'Address;
 
       PWR_MGMT   : constant PWR_MGMT_Registers :=
@@ -202,7 +202,7 @@ package body BBF.Drivers.MPU is
             STBY_YA => Accelerometer_Range = Disabled,
             STBY_XA => Accelerometer_Range = Disabled,
             others  => <>));
-      PWR_MGMT_B : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
+      PWR_MGMT_B : constant BBF.Unsigned_8_Array_16 (1 .. 2)
         with Import, Convention => Ada, Address => PWR_MGMT'Address;
 
    begin
@@ -252,7 +252,7 @@ package body BBF.Drivers.MPU is
       Success   : in out Boolean)
    is
       CONFIG     : CONFIG_Resgisters;
-      CONFIG_B   : BBF.I2C.Unsigned_8_Array (1 .. 5)
+      CONFIG_B   : BBF.Unsigned_8_Array_16 (1 .. 5)
         with Import, Convention => Ada, Address => CONFIG'Address;
 
       PWR_MGMT   : constant PWR_MGMT_Registers :=
@@ -269,7 +269,7 @@ package body BBF.Drivers.MPU is
             STBY_XA => False,
             others  => <>));
       --  Recommended by Application Notes.
-      PWR_MGMT_B : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
+      PWR_MGMT_B : constant BBF.Unsigned_8_Array_16 (1 .. 2)
         with Import, Convention => Ada, Address => PWR_MGMT'Address;
 
    begin
@@ -340,15 +340,15 @@ package body BBF.Drivers.MPU is
       declare
          INT_ENABLE   : constant Registers.INT_ENABLE_Register :=
            (others => False);
-         INT_ENABLE_B : constant Interfaces.Unsigned_8
+         INT_ENABLE_B : constant BBF.Unsigned_8
            with Import, Address => INT_ENABLE'Address;
          FIFO_EN      : constant Registers.FIFO_EN_Register :=
            (others => False);
-         FIFO_EN_B    : constant Interfaces.Unsigned_8
+         FIFO_EN_B    : constant BBF.Unsigned_8
            with Import, Address => FIFO_EN'Address;
          USER_CTRL    : constant Registers.USER_CTRL_Register :=
            (others => False);
-         USER_CTRL_B  : constant Interfaces.Unsigned_8
+         USER_CTRL_B  : constant BBF.Unsigned_8
            with Import, Address => USER_CTRL'Address;
 
       begin
@@ -367,7 +367,7 @@ package body BBF.Drivers.MPU is
            (FIFO_RESET => True,
             DMP_RESET  => Self.DMP_Enabled,
             others     => False);
-         USER_CTRL_B : constant Interfaces.Unsigned_8
+         USER_CTRL_B : constant BBF.Unsigned_8
            with Import, Address => USER_CTRL'Address;
 
       begin
@@ -385,7 +385,7 @@ package body BBF.Drivers.MPU is
            (FIFO_EN => True,
             DMP_EN  => Self.DMP_Enabled,
             others  => False);
-         USER_CTRL_B : constant Interfaces.Unsigned_8
+         USER_CTRL_B : constant BBF.Unsigned_8
            with Import, Address => USER_CTRL'Address;
 
          INT         : constant INT_Registers :=
@@ -398,7 +398,7 @@ package body BBF.Drivers.MPU is
               (RAW_RDY_EN => not Self.DMP_Enabled,
                DMP_INT_EN => Self.DMP_Enabled,
                others     => False));
-         INT_B       : constant BBF.I2C.Unsigned_8_Array (1 .. 2)
+         INT_B       : constant BBF.Unsigned_8_Array_16 (1 .. 2)
            with Import, Address => INT'Address;
 
          FIFO_EN     : constant Registers.FIFO_EN_Register :=
@@ -409,7 +409,7 @@ package body BBF.Drivers.MPU is
             ZG_FIFO_EN    => Self.Gyroscope_Enabled and not Self.DMP_Enabled,
             TEMP_FIFO_EN  => Self.Temperature_Enabled and not Self.DMP_Enabled,
             others        => False);
-         FIFO_EN_B   : constant Interfaces.Unsigned_8
+         FIFO_EN_B   : constant BBF.Unsigned_8
            with Import, Address => FIFO_EN'Address;
 
       begin
@@ -439,12 +439,10 @@ package body BBF.Drivers.MPU is
    procedure Internal_Initialize
      (Self    : in out Abstract_MPU_Sensor'Class;
       Delays  : not null access BBF.Delays.Delay_Controller'Class;
-      WHOAMI  : Interfaces.Unsigned_8;
+      WHOAMI  : BBF.Unsigned_8;
       Success : in out Boolean)
    is
-      use type Interfaces.Unsigned_8;
-
-      Buffer : Interfaces.Unsigned_8;
+      Buffer : BBF.Unsigned_8;
 
    begin
       Self.Initialized := False;
@@ -482,7 +480,7 @@ package body BBF.Drivers.MPU is
            (DEVICE_RESET => True,
             CLKSEL       => Registers.Internal,
             others       => <>);
-         PWR_MGMT_1_B : Interfaces.Unsigned_8
+         PWR_MGMT_1_B : BBF.Unsigned_8
            with Address => PWR_MGMT_1'Address;
 
       begin
@@ -504,7 +502,7 @@ package body BBF.Drivers.MPU is
             ACCEL_Reset => True,
             GYRO_Reset  => True,
             others      => <>);
-         SIGNAL_PATH_RESET_B : Interfaces.Unsigned_8
+         SIGNAL_PATH_RESET_B : BBF.Unsigned_8
            with Address => SIGNAL_PATH_RESET'Address;
 
       begin
@@ -528,7 +526,7 @@ package body BBF.Drivers.MPU is
            (SLEEP  => False,
             CLKSEL => Registers.Internal,
             others => <>);
-         PWR_MGMT_1_B : Interfaces.Unsigned_8
+         PWR_MGMT_1_B : BBF.Unsigned_8
            with Address => PWR_MGMT_1'Address;
 
       begin
@@ -544,7 +542,7 @@ package body BBF.Drivers.MPU is
    ------------------------
 
    procedure On_FIFO_Count_Read (Closure : System.Address) is
-      use type Interfaces.Unsigned_16;
+      use type BBF.Unsigned_16;
 
       Self    : constant Conversions.Object_Pointer :=
         Conversions.To_Pointer (Closure);
@@ -712,14 +710,14 @@ package body BBF.Drivers.MPU is
    procedure Read_DMP_Memory
      (Self    : in out Abstract_MPU_Sensor'Class;
       Address : Interfaces.Unsigned_16;
-      Data    : out BBF.I2C.Unsigned_8_Array;
+      Data    : out BBF.Unsigned_8_Array_16;
       Success : in out Boolean)
    is
       use type Interfaces.Unsigned_16;
 
       BANK_SEL   : constant Registers.BANK_SEL_Register :=
         (Address => Address);
-      BANK_SEL_B : constant BBF.I2C.Unsigned_8_Array (1 .. DMP_BANK_SEL_Length)
+      BANK_SEL_B : constant BBF.Unsigned_8_Array_16 (1 .. DMP_BANK_SEL_Length)
         with Import, Address => BANK_SEL'Address;
 
    begin
@@ -789,28 +787,27 @@ package body BBF.Drivers.MPU is
 
    procedure Upload_Firmware
      (Self     : in out Abstract_MPU_Sensor'Class;
-      Firmware : BBF.I2C.Unsigned_8_Array;
+      Firmware : BBF.Unsigned_8_Array_16;
       Address  : Interfaces.Unsigned_16;
       Success  : in out Boolean)
    is
-      use type BBF.I2C.Unsigned_8_Array;
-
       PRGM_START   : constant Registers.PRGM_START_Register :=
         (Address => Address);
-      PRGM_START_B : constant BBF.I2C.Unsigned_8_Array
+      PRGM_START_B : constant BBF.Unsigned_8_Array_16
                                 (1 .. DMP_PRGM_START_Length)
         with Import, Address => PRGM_START'Address;
 
-      Max_Chunk : constant Positive := Self.Buffer'Length;
-      Current   : Positive          := Firmware'First;
-      Chunk     : Natural           := 0;
+      Max_Chunk : constant BBF.Unsigned_16 := Self.Buffer'Length;
+      Current   : BBF.Unsigned_16          := Firmware'First;
+      Chunk     : BBF.Unsigned_16          := 0;
 
    begin
       loop
          exit when not Success;
          exit when Current > Firmware'Last;
 
-         Chunk := Natural'Min (Max_Chunk, Firmware'Last - Current + 1);
+         Chunk :=
+           BBF.Unsigned_16'Min (Max_Chunk, Firmware'Last - Current + 1);
 
          --  Copy chunk of data: when firmware is stored in the flash memory
          --  it might be unaccessible by PDC.
@@ -854,14 +851,14 @@ package body BBF.Drivers.MPU is
    procedure Write_DMP_Memory
      (Self    : in out Abstract_MPU_Sensor'Class;
       Address : Interfaces.Unsigned_16;
-      Data    : BBF.I2C.Unsigned_8_Array;
+      Data    : BBF.Unsigned_8_Array_16;
       Success : in out Boolean)
    is
       use type Interfaces.Unsigned_16;
 
       BANK_SEL   : constant Registers.BANK_SEL_Register :=
         (Address => Address);
-      BANK_SEL_B : constant BBF.I2C.Unsigned_8_Array (1 .. DMP_BANK_SEL_Length)
+      BANK_SEL_B : constant BBF.Unsigned_8_Array_16 (1 .. DMP_BANK_SEL_Length)
         with Import, Address => BANK_SEL'Address;
 
    begin

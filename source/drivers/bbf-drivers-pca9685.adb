@@ -86,7 +86,7 @@ package body BBF.Drivers.PCA9685 is
       use type Interfaces.Unsigned_16;
 
       MODE        : MODE_Register;
-      MODE_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 2)
+      MODE_Buffer : BBF.Unsigned_8_Array_16 (1 .. 2)
         with Address => MODE'Address;
 
    begin
@@ -134,7 +134,7 @@ package body BBF.Drivers.PCA9685 is
       --  Configure PRE_SCALE register.
 
       Self.Scale :=
-        Interfaces.Unsigned_8
+        BBF.Unsigned_8
          ((Interfaces.Unsigned_16 (2 * OSC_CLOCK / 4_096) / Frequency - 1) / 2);
       --  Equation (1) in 7.3.5 assume use of real numbers. Modified version is
       --  used to produce same result with integer operations only.
@@ -182,7 +182,7 @@ package body BBF.Drivers.PCA9685 is
       declare
          R : constant Registers.LED_OFF_H_Register :=
            (Count => 0, Off => True, others => False);
-         B : BBF.I2C.Unsigned_8_Array (1 .. 1) with Address => R'Address;
+         B : BBF.Unsigned_8_Array_16 (1 .. 1) with Address => R'Address;
 
       begin
          Self.Bus.Write_Synchronous
@@ -205,7 +205,7 @@ package body BBF.Drivers.PCA9685 is
 
       declare
          MODE        : MODE_Register;
-         MODE_Buffer : BBF.I2C.Unsigned_8_Array (1 .. 2)
+         MODE_Buffer : BBF.Unsigned_8_Array_16 (1 .. 2)
            with Address => MODE'Address;
 
       begin
