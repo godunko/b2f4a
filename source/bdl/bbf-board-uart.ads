@@ -11,30 +11,40 @@
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
 
---  UART interface for Arduino Due/X board.
+--  UART driver of Arduino Due/X board.
 
-private with BBF.BSL.UART;
+pragma Restrictions (No_Elaboration_Code);
+
+private with Ada.Interrupts.Names;
+
+private with BBF.BSL.SAM3_UART;
 private with BBF.HPL.PIO;
 private with BBF.HRI.UART;
 with BBF.UART;
 
 package BBF.Board.UART is
 
-   pragma Preelaborate;
-
-   UART : constant not null access BBF.UART.UART_Controller'Class;
+   type UART_Driver
+     (Receive_Queue  : BBF.Unsigned_16;
+      Transmit_Queue : BBF.Unsigned_16) is
+        limited new BBF.UART.UART_Controller with private;
 
 private
 
-   UART_Controller : aliased BBF.BSL.UART.SAM3_UART_Controller
-     (Controller  => BBF.HRI.UART.UART_Periph'Access,
-      Peripheral  => BBF.HPL.Universal_Asynchronous_Receiver_Transceiver,
-      RX          => PIOA.Pin_08'Access,
-      RX_Function => BBF.HPL.PIO.A,
-      TX          => PIOA.Pin_09'Access,
-      TX_Function => BBF.HPL.PIO.A);
-
-   UART : constant not null access BBF.UART.UART_Controller'Class :=
-     UART_Controller'Access;
+   type UART_Driver
+     (Receive_Queue  : BBF.Unsigned_16;
+      Transmit_Queue : BBF.Unsigned_16) is
+        limited new BBF.BSL.SAM3_UART.SAM3_UART_Driver
+                      (Controller     => BBF.HRI.UART.UART_Periph'Access,
+                       Peripheral     =>
+                         BBF.HPL.Universal_Asynchronous_Receiver_Transceiver,
+                       Interrupt      => Ada.Interrupts.Names.UART_Interrupt,
+                       RX             => PIOA.Pin_08'Access,
+                       RX_Function    => BBF.HPL.PIO.A,
+                       TX             => PIOA.Pin_09'Access,
+                       TX_Function    => BBF.HPL.PIO.A,
+                       Receive_Queue  => Receive_Queue,
+                       Transmit_Queue => Transmit_Queue)
+        with null record;
 
 end BBF.Board.UART;
