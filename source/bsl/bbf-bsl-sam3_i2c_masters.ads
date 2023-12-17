@@ -15,6 +15,7 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
+with Ada.Interrupts;
 with Interfaces;
 
 private with BBF.ADT.Generic_MPMC_Bounded_Queues;
@@ -25,16 +26,16 @@ with BBF.I2C.Master;
 
 package BBF.BSL.SAM3_I2C_Masters is
 
-   pragma Preelaborate;
-
    type SAM3_I2C_Master_Controller
      (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
       Peripheral   : BBF.HPL.Peripheral_Identifier;
+      Interrupt    : Ada.Interrupts.Interrupt_ID;
       SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
       SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
       SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
-        limited new BBF.I2C.Master.I2C_Master_Controller with private with Preelaborable_Initialization;
+        limited new BBF.I2C.Master.I2C_Master_Controller
+          with private with Preelaborable_Initialization;
 
    procedure Initialize (Self : in out SAM3_I2C_Master_Controller);
 
@@ -99,9 +100,21 @@ private
    package Operation_Queues is
      new BBF.ADT.Generic_MPMC_Bounded_Queues (Operation_Record);
 
+   protected type SAM3_TWI_Handler
+     (Driver    : not null access SAM3_I2C_Master_Controller'Class;
+      Interrupt : Ada.Interrupts.Interrupt_ID)
+   is
+
+   private
+
+      procedure Interrupt_Handler with Attach_Handler => Interrupt;
+
+   end SAM3_TWI_Handler;
+
    type SAM3_I2C_Master_Controller
      (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
       Peripheral   : BBF.HPL.Peripheral_Identifier;
+      Interrupt    : Ada.Interrupts.Interrupt_ID;
       SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
       SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
@@ -109,6 +122,8 @@ private
    limited new BBF.I2C.Master.I2C_Master_Controller with record
       Queue   : Operation_Queues.Queue (16);
       Current : Operation_Record;
+      Handler : SAM3_TWI_Handler
+                  (SAM3_I2C_Master_Controller'Unchecked_Access, Interrupt);
    end record;
 
    overriding procedure Read_Asynchronous
