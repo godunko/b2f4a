@@ -2,7 +2,7 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
+--                           Board Support Layer                            --
 --                                                                          --
 ------------------------------------------------------------------------------
 --
@@ -21,7 +21,7 @@ with BBF.HPL.PIO;
 with BBF.HRI.PIO;
 with BBF.BSL.SAM;
 
-package BBF.BSL.GPIO is
+package BBF.BSL.SAM3_GPIO is
 
    pragma Preelaborate;
 
@@ -107,4 +107,4 @@ package BBF.BSL.GPIO is
       Callback : Pin_Callback_Array;
    end record;
 
-end BBF.BSL.GPIO;
+end BBF.BSL.SAM3_GPIO;

@@ -18,7 +18,7 @@ pragma Restrictions (No_Elaboration_Code);
 with Ada.Interrupts;
 with Ada.Synchronous_Task_Control;
 
-with BBF.BSL.GPIO;
+with BBF.BSL.SAM3_GPIO;
 with BBF.HPL.PIO;
 with BBF.HPL.UART;
 with BBF.UART;
@@ -57,9 +57,9 @@ package BBF.BSL.SAM3_UART is
      (Controller     : not null BBF.HPL.UART.UART;
       Peripheral     : BBF.HPL.Peripheral_Identifier;
       Interrupt      : Ada.Interrupts.Interrupt_ID;
-      RX             : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      RX             : not null access BBF.BSL.SAM3_GPIO.SAM3_GPIO_Pin'Class;
       RX_Function    : BBF.HPL.PIO.Peripheral_Function;
-      TX             : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      TX             : not null access BBF.BSL.SAM3_GPIO.SAM3_GPIO_Pin'Class;
       TX_Function    : BBF.HPL.PIO.Peripheral_Function;
       Receive_Queue  : BBF.Unsigned_16;
       Transmit_Queue : BBF.Unsigned_16) is

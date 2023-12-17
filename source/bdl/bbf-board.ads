@@ -2,7 +2,7 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
+--                         Board Description Layer                          --
 --                                                                          --
 ------------------------------------------------------------------------------
 --
@@ -22,7 +22,7 @@ private with BBF.HRI.SYSC;
 private with BBF.HRI.SYST;
 private with BBF.BSL.Clocks;
 private with BBF.BSL.Delays;
-private with BBF.BSL.GPIO;
+private with BBF.BSL.SAM3_GPIO;
 with BBF.BSL.SAM;
 
 package BBF.Board is
@@ -54,16 +54,16 @@ package BBF.Board is
 
 private
 
-   PIOA : aliased BBF.BSL.GPIO.SAM3_PIO_Driver
+   PIOA : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
       Peripheral => BBF.HPL.Parallel_IO_Controller_A);
-   PIOB : aliased BBF.BSL.GPIO.SAM3_PIO_Driver
+   PIOB : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
       Peripheral => BBF.HPL.Parallel_IO_Controller_B);
-   PIOC : aliased BBF.BSL.GPIO.SAM3_PIO_Driver
+   PIOC : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOC_Periph'Access,
       Peripheral => BBF.HPL.Parallel_IO_Controller_C);
-   PIOD : aliased BBF.BSL.GPIO.SAM3_PIO_Driver
+   PIOD : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOD_Periph'Access,
       Peripheral => BBF.HPL.Parallel_IO_Controller_D);
 

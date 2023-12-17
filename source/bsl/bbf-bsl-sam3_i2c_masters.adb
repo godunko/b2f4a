@@ -2,7 +2,7 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
+--                           Board Support Layer                            --
 --                                                                          --
 ------------------------------------------------------------------------------
 --

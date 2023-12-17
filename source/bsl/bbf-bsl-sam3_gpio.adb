@@ -2,7 +2,7 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
+--                           Board Support Layer                            --
 --                                                                          --
 ------------------------------------------------------------------------------
 --
@@ -14,7 +14,7 @@
 with BBF.HPL.NVIC;
 with BBF.HPL.PMC;
 
-package body BBF.BSL.GPIO is
+package body BBF.BSL.SAM3_GPIO is
 
    function Mask
     (Self : SAM3_GPIO_Pin'Class) return BBF.HPL.PIO.PIO_Pin_Array;
@@ -248,4 +248,4 @@ package body BBF.BSL.GPIO is
       BBF.HPL.PIO.Set_Peripheral (Self.Driver.Controller, Self.Mask, To);
    end Set_Peripheral;
 
-end BBF.BSL.GPIO;
+end BBF.BSL.SAM3_GPIO;

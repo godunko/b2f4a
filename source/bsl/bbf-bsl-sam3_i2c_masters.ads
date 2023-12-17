@@ -2,7 +2,7 @@
 --                                                                          --
 --                           Bare Board Framework                           --
 --                                                                          --
---                        Hardware Abstraction Layer                        --
+--                           Board Support Layer                            --
 --                                                                          --
 ------------------------------------------------------------------------------
 --
@@ -19,7 +19,7 @@ with Ada.Interrupts;
 with Interfaces;
 
 private with BBF.ADT.Generic_MPMC_Bounded_Queues;
-with BBF.BSL.GPIO;
+with BBF.BSL.SAM3_GPIO;
 with BBF.HPL.PIO;
 with BBF.HRI.TWI;
 with BBF.I2C.Master;
@@ -30,9 +30,9 @@ package BBF.BSL.SAM3_I2C_Masters is
      (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
       Peripheral   : BBF.HPL.Peripheral_Identifier;
       Interrupt    : Ada.Interrupts.Interrupt_ID;
-      SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SCL          : not null access BBF.BSL.SAM3_GPIO.SAM3_GPIO_Pin'Class;
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
-      SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SDA          : not null access BBF.BSL.SAM3_GPIO.SAM3_GPIO_Pin'Class;
       SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
         limited new BBF.I2C.Master.I2C_Master_Controller
           with private with Preelaborable_Initialization;
@@ -115,9 +115,9 @@ private
      (Controller   : not null access BBF.HRI.TWI.TWI_Peripheral;
       Peripheral   : BBF.HPL.Peripheral_Identifier;
       Interrupt    : Ada.Interrupts.Interrupt_ID;
-      SCL          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SCL          : not null access BBF.BSL.SAM3_GPIO.SAM3_GPIO_Pin'Class;
       SCL_Function : BBF.HPL.PIO.Peripheral_Function;
-      SDA          : not null access BBF.BSL.GPIO.SAM3_GPIO_Pin'Class;
+      SDA          : not null access BBF.BSL.SAM3_GPIO.SAM3_GPIO_Pin'Class;
       SDA_Function : BBF.HPL.PIO.Peripheral_Function) is
    limited new BBF.I2C.Master.I2C_Master_Controller with record
       Queue   : Operation_Queues.Queue (16);
