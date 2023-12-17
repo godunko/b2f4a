@@ -1,6 +1,6 @@
 # Bare Board Framework
 
-Goal of this project is to provide foundation to Hexapod project.
+Goal of this project is to provide foundation to [Hexapod](https://github.com/godunko/hexapod/) project.
 
 In contrast to may other frameworks, most of interactions with
 sensors/controllers are implemented asynchronously with use of hardware
