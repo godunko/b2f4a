@@ -15,7 +15,6 @@ with Ada.Unchecked_Conversion;
 with System.Address_To_Access_Conversions;
 with System.Storage_Elements;
 
-with BBF.Board;
 with BBF.Drivers.MPU.DMP612;
 with BBF.External_Interrupts;
 
