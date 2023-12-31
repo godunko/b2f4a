@@ -11,9 +11,6 @@
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
 
-with System.Semihosting;
-
-with BBF.HPL.NVIC;
 with BBF.HPL.PMC;
 
 package body BBF.BSL.SAM3_UART is
@@ -80,14 +77,10 @@ package body BBF.BSL.SAM3_UART is
          Length_N : Unsigned_16 := 0;
 
       begin
-         System.Semihosting.Put ("UART: interrupt" & ASCII.CR & ASCII.LF);
-
          if BBF.HPL.UART.Is_Interrupt_Enabled
               (Driver.Controller, BBF.HPL.UART.Receive_Ready)
            and then BBF.HPL.UART.Is_Receiver_Ready (Status)
          then
-            System.Semihosting.Put ("UART: receiver ready" & ASCII.CR & ASCII.LF);
-
             --  Store data from the UART buffer into the buffer.
 
             --  XXX Only single element buffer is supported.
