@@ -13,6 +13,8 @@
 
 --  This version of the package provides definitions for Arduino Due/X board.
 
+private with Ada.Interrupts.Names;
+
 with BBF.Clocks;
 with BBF.Delays;
 with BBF.GPIO;
@@ -26,8 +28,6 @@ private with BBF.BSL.SAM3_GPIO;
 with BBF.BSL.SAM;
 
 package BBF.Board is
-
-   pragma Preelaborate;
 
    Pin_SCL1   : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_SDA1   : constant not null access BBF.BSL.SAM.Pin'Class;
@@ -56,16 +56,20 @@ private
 
    PIOA : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOA_Periph'Access,
-      Peripheral => BBF.HPL.Parallel_IO_Controller_A);
+      Peripheral => BBF.HPL.Parallel_IO_Controller_A,
+      Interrupt  => Ada.Interrupts.Names.PIOA_Interrupt);
    PIOB : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOB_Periph'Access,
-      Peripheral => BBF.HPL.Parallel_IO_Controller_B);
+      Peripheral => BBF.HPL.Parallel_IO_Controller_B,
+      Interrupt  => Ada.Interrupts.Names.PIOB_Interrupt);
    PIOC : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOC_Periph'Access,
-      Peripheral => BBF.HPL.Parallel_IO_Controller_C);
+      Peripheral => BBF.HPL.Parallel_IO_Controller_C,
+      Interrupt  => Ada.Interrupts.Names.PIOC_Interrupt);
    PIOD : aliased BBF.BSL.SAM3_GPIO.SAM3_PIO_Driver
      (Controller => BBF.HRI.PIO.PIOD_Periph'Access,
-      Peripheral => BBF.HPL.Parallel_IO_Controller_D);
+      Peripheral => BBF.HPL.Parallel_IO_Controller_D,
+      Interrupt  => Ada.Interrupts.Names.PIOD_Interrupt);
 
    Delay_Instance : aliased BBF.BSL.Delays.SAM_SYSTICK_Controller
      := (Controller => BBF.HRI.SYST.SYST_Periph'Access);

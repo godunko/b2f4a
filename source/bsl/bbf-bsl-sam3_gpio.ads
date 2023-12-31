@@ -15,6 +15,8 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
+with Ada.Interrupts;
+
 with BBF.External_Interrupts;
 with BBF.GPIO;
 with BBF.HPL.PIO;
@@ -22,8 +24,6 @@ with BBF.HRI.PIO;
 with BBF.BSL.SAM;
 
 package BBF.BSL.SAM3_GPIO is
-
-   pragma Preelaborate;
 
    type SAM3_PIO_Driver;
 
@@ -64,9 +64,21 @@ package BBF.BSL.SAM3_GPIO is
 
    type Pin_Callback_Array is array (BBF.HPL.PIO.PIO_Pin) of Pin_Callback;
 
+   protected type SAM3_GPIO_Handler
+     (Driver    : not null access SAM3_PIO_Driver;
+      Interrupt : Ada.Interrupts.Interrupt_ID)
+   is
+
+   private
+
+      procedure Interrupt_Handler with Attach_Handler => Interrupt;
+
+   end SAM3_GPIO_Handler;
+
    type SAM3_PIO_Driver
      (Controller : not null access BBF.HRI.PIO.PIO_Peripheral;
-      Peripheral : BBF.HPL.Peripheral_Identifier)
+      Peripheral : BBF.HPL.Peripheral_Identifier;
+      Interrupt  : Ada.Interrupts.Interrupt_ID)
    is limited record
       Pin_00   : aliased SAM3_GPIO_Pin (SAM3_PIO_Driver'Unchecked_Access, 0);
       Pin_01   : aliased SAM3_GPIO_Pin (SAM3_PIO_Driver'Unchecked_Access, 1);
@@ -105,6 +117,9 @@ package BBF.BSL.SAM3_GPIO is
       Pin_31   : aliased SAM3_GPIO_Pin (SAM3_PIO_Driver'Unchecked_Access, 31);
 
       Callback : Pin_Callback_Array;
+
+      Handler  : SAM3_GPIO_Handler
+                   (SAM3_PIO_Driver'Unchecked_Access, Interrupt);
    end record;
 
 end BBF.BSL.SAM3_GPIO;

@@ -11,49 +11,12 @@
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
 
-with BBF.HPL.NVIC;
 with BBF.HPL.PMC;
 
 package body BBF.BSL.SAM3_GPIO is
 
    function Mask
     (Self : SAM3_GPIO_Pin'Class) return BBF.HPL.PIO.PIO_Pin_Array;
-
-   procedure On_Interrupt (Self : in out SAM3_PIO_Driver);
-   --  Handle hardware interrupt.
-
-   procedure PIOA_Handler
-     with Export,
-          Convention    => C,
-          External_Name => "PIOA_Handler";
-   --  PIOA interrupt handler
-
-   procedure PIOB_Handler
-     with Export,
-          Convention    => C,
-          External_Name => "PIOB_Handler";
-   --  PIOB interrupt handler
-
-   procedure PIOC_Handler
-     with Export,
-          Convention    => C,
-          External_Name => "PIOC_Handler";
-   --  PIOC interrupt handler
-
-   procedure PIOD_Handler
-     with Export,
-          Convention    => C,
-          External_Name => "PIOD_Handler";
-   --  PIOD interrupt handler
-
-   type SAM3_PIO_Driver_Access is access all SAM3_PIO_Driver;
-
-   Driver :
-     array (BBF.HPL.Peripheral_Identifier
-              range BBF.HPL.Parallel_IO_Controller_A
-                      .. BBF.HPL.Parallel_IO_Controller_D)
-       of SAM3_PIO_Driver_Access := (others => null);
-   --  Driver objects to be used by interrupt handlers.
 
    ---------------
    -- Configure --
@@ -124,59 +87,32 @@ package body BBF.BSL.SAM3_GPIO is
       end return;
    end Mask;
 
-   ------------------
-   -- On_Interrupt --
-   ------------------
+   -----------------------
+   -- SAM3_GPIO_Handler --
+   -----------------------
 
-   procedure On_Interrupt (Self : in out SAM3_PIO_Driver) is
-      Status : constant BBF.HPL.PIO.Status :=
-        BBF.HPL.PIO.Get_And_Clear_Status (Self.Controller);
+   protected body SAM3_GPIO_Handler is
 
-   begin
-      for Pin in BBF.HPL.PIO.PIO_Pin'Range loop
-         if BBF.HPL.PIO.Is_Detected (Status, Pin) then
-            if Self.Callback (Pin).Handler /= null then
-               Self.Callback (Pin).Handler (Self.Callback (Pin).Closure);
+      -----------------------
+      -- Interrupt_Handler --
+      -----------------------
+
+      procedure Interrupt_Handler is
+         Status : constant BBF.HPL.PIO.Status :=
+           BBF.HPL.PIO.Get_And_Clear_Status (Driver.Controller);
+
+      begin
+         for Pin in BBF.HPL.PIO.PIO_Pin'Range loop
+            if BBF.HPL.PIO.Is_Detected (Status, Pin) then
+               if Driver.Callback (Pin).Handler /= null then
+                  Driver.Callback (Pin).Handler
+                    (Driver.Callback (Pin).Closure);
+               end if;
             end if;
-         end if;
-      end loop;
-   end On_Interrupt;
+         end loop;
+      end Interrupt_Handler;
 
-   ------------------
-   -- PIOA_Handler --
-   ------------------
-
-   procedure PIOA_Handler is
-   begin
-      On_Interrupt (Driver (BBF.HPL.Parallel_IO_Controller_A).all);
-   end PIOA_Handler;
-
-   ------------------
-   -- PIOB_Handler --
-   ------------------
-
-   procedure PIOB_Handler is
-   begin
-      On_Interrupt (Driver (BBF.HPL.Parallel_IO_Controller_B).all);
-   end PIOB_Handler;
-
-   ------------------
-   -- PIOC_Handler --
-   ------------------
-
-   procedure PIOC_Handler is
-   begin
-      On_Interrupt (Driver (BBF.HPL.Parallel_IO_Controller_C).all);
-   end PIOC_Handler;
-
-   ------------------
-   -- PIOD_Handler --
-   ------------------
-
-   procedure PIOD_Handler is
-   begin
-      On_Interrupt (Driver (BBF.HPL.Parallel_IO_Controller_D).all);
-   end PIOD_Handler;
+   end SAM3_GPIO_Handler;
 
    ---------
    -- Set --
@@ -221,20 +157,10 @@ package body BBF.BSL.SAM3_GPIO is
 
       BBF.HPL.PMC.Enable_Peripheral_Clock (Self.Driver.Peripheral);
 
-      --  Connect hardware interrupt handler with PIO driver.
-
-      if Driver (Self.Driver.Peripheral) = null then
-         Driver (Self.Driver.Peripheral) := Self.Driver;
-      end if;
-
       --  Store handler and closure.
 
       Self.Driver.Callback (Self.Pin).Closure := Closure;
       Self.Driver.Callback (Self.Pin).Handler := Handler;
-
-      --  Enable interrupts from the peripheral
-
-      BBF.HPL.NVIC.Enable_Interrupt (Self.Driver.Peripheral);
    end Set_Handler;
 
    --------------------
