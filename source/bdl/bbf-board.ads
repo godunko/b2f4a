@@ -6,7 +6,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --
---  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--  Copyright (C) 2019-2024, Vadim Godunko <vgodunko@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
@@ -39,6 +39,7 @@ package BBF.Board is
    Pin_21_SCL : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_23     : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_50     : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_51     : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_52     : constant not null access BBF.BSL.SAM.Pin'Class;
    Pin_53     : constant not null access BBF.BSL.SAM.Pin'Class;
 
@@ -98,6 +99,8 @@ private
      := PIOA.Pin_14'Access;
    Pin_50     : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOC.Pin_13'Access;
+   Pin_51     : constant not null access BBF.BSL.SAM.Pin'Class
+     := PIOC.Pin_12'Access;
    Pin_52     : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_21'Access;
    Pin_53     : constant not null access BBF.BSL.SAM.Pin'Class
