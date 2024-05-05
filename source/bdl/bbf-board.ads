@@ -29,19 +29,23 @@ with BBF.BSL.SAM;
 
 package BBF.Board is
 
-   Pin_SCL1   : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_SDA1   : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_SCL1    : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_SDA1    : constant not null access BBF.BSL.SAM.Pin'Class;
 
-   Pin_0_RX0  : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_1_TD0  : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_13_LED : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_20_SDA : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_21_SCL : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_23     : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_50     : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_51     : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_52     : constant not null access BBF.BSL.SAM.Pin'Class;
-   Pin_53     : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_0_RX0   : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_1_TD0   : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_13_LED  : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_20_SDA  : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_21_SCL  : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_23      : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_50      : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_51      : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_52      : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_53      : constant not null access BBF.BSL.SAM.Pin'Class;
+
+   Pin_74_MISO : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_75_MOSI : constant not null access BBF.BSL.SAM.Pin'Class;
+   Pin_76_SCK  : constant not null access BBF.BSL.SAM.Pin'Class;
 
    Delay_Controller :
      constant not null access BBF.Delays.Delay_Controller'Class;
@@ -78,33 +82,40 @@ private
    Clock_Instance : aliased BBF.BSL.Clocks.SAM_RTT_Clock_Controller
      := (Controller => BBF.HRI.SYSC.RTT_Periph'Access);
 
-   Pin_SCL1   : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_SCL1    : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOA.Pin_18'Access;
-   Pin_SDA1   : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_SDA1    : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOA.Pin_17'Access;
 
-   Pin_0_RX0  : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_0_RX0   : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOA.Pin_08'Access;
-   Pin_1_TD0  : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_1_TD0   : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOA.Pin_09'Access;
 
-   Pin_13_LED : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_13_LED  : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_27'Access;
 
-   Pin_20_SDA : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_20_SDA  : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_12'Access;
-   Pin_21_SCL : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_21_SCL  : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_13'Access;
-   Pin_23     : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_23      : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOA.Pin_14'Access;
-   Pin_50     : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_50      : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOC.Pin_13'Access;
-   Pin_51     : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_51      : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOC.Pin_12'Access;
-   Pin_52     : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_52      : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_21'Access;
-   Pin_53     : constant not null access BBF.BSL.SAM.Pin'Class
+   Pin_53      : constant not null access BBF.BSL.SAM.Pin'Class
      := PIOB.Pin_14'Access;
+
+   Pin_74_MISO : constant not null access BBF.BSL.SAM.Pin'Class
+     := PIOA.Pin_25'Access;
+   Pin_75_MOSI : constant not null access BBF.BSL.SAM.Pin'Class
+     := PIOA.Pin_26'Access;
+   Pin_76_SCK  : constant not null access BBF.BSL.SAM.Pin'Class
+     := PIOA.Pin_27'Access;
 
    Delay_Controller :
      constant not null access BBF.Delays.Delay_Controller'Class
