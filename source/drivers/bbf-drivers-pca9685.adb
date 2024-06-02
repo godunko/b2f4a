@@ -19,11 +19,16 @@ package body BBF.Drivers.PCA9685 is
    OSC_CLOCK : constant := 25_000_000;
    --  Internal oscillator frequency.
 
-   MODE1_Address         : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#00#;
-   LED0_ON_L_Address     : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#06#;
-   ALL_LED_ON_H_Address  : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FA#;
-   ALL_LED_OFF_H_Address : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FD#;
-   PRE_SCALE_Address     : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FE#;
+   MODE1_Address         :
+     constant A0B.I2C.Device_Drivers_8.Register_Address := 16#00#;
+   LED0_ON_L_Address     :
+     constant A0B.I2C.Device_Drivers_8.Register_Address := 16#06#;
+   ALL_LED_ON_H_Address  :
+     constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FA#;
+   ALL_LED_OFF_H_Address :
+     constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FD#;
+   PRE_SCALE_Address     :
+     constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FE#;
 
    type MODE1_Register is record
       ALLCALL : Boolean := True;
