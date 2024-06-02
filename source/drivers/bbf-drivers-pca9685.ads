@@ -4,7 +4,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --
---  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--  Copyright (C) 2019-2024, Vadim Godunko <vgodunko@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
@@ -14,7 +14,9 @@
 
 with Interfaces;
 
-with BBF.I2C.Master;
+with A0B.I2C.Device_Drivers_8;
+with A0B.Types;
+
 with BBF.PCA9685;
 
 package BBF.Drivers.PCA9685 is
@@ -93,9 +95,8 @@ package BBF.Drivers.PCA9685 is
      (Self : PCA9685_Channel_Driver) return BBF.PCA9685.Tick_Duration_Type;
 
    type PCA9685_Controller_Driver
-     (Bus    : not null access BBF.I2C.Master.I2C_Master_Controller'Class;
-      Device : BBF.I2C.Device_Address)
-        is limited new BBF.PCA9685.PCA9685_Controller with
+     is limited new A0B.I2C.Device_Drivers_8.I2C_Device_Driver
+       and BBF.PCA9685.PCA9685_Controller with
    record
       Buffer      : Registers.LED_Register_Buffer;
       --  Buffer to prepare values to be send to controller's registers.
@@ -103,7 +104,7 @@ package BBF.Drivers.PCA9685 is
       Initialized : Boolean := False;
       --  Controller has been initialized.
 
-      Scale       : BBF.Unsigned_8 := 3;
+      Scale       : A0B.Types.Unsigned_8 := 3;
       --  Internal frequency scale factor
 
       Channel_00  : aliased
@@ -138,6 +139,8 @@ package BBF.Drivers.PCA9685 is
         PCA9685_Channel_Driver (PCA9685_Controller_Driver'Unchecked_Access, 14);
       Channel_15  : aliased
         PCA9685_Channel_Driver (PCA9685_Controller_Driver'Unchecked_Access, 15);
+
+      Status      : aliased A0B.I2C.Device_Drivers_8.Transaction_Status;
    end record
      with Preelaborable_Initialization;
 

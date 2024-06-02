@@ -4,21 +4,26 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --
---  Copyright (C) 2019-2023, Vadim Godunko <vgodunko@gmail.com>
+--  Copyright (C) 2019-2024, Vadim Godunko <vgodunko@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
+
+with A0B.Callbacks.Generic_Non_Dispatching;
+with A0B.Types;
+
+with BBF.Awaits;
 
 package body BBF.Drivers.PCA9685 is
 
    OSC_CLOCK : constant := 25_000_000;
    --  Internal oscillator frequency.
 
-   MODE1_Address         : constant BBF.I2C.Internal_Address_8 := 16#00#;
-   LED0_ON_L_Address     : constant BBF.I2C.Internal_Address_8 := 16#06#;
-   ALL_LED_ON_H_Address  : constant BBF.I2C.Internal_Address_8 := 16#FA#;
-   ALL_LED_OFF_H_Address : constant BBF.I2C.Internal_Address_8 := 16#FD#;
-   PRE_SCALE_Address     : constant BBF.I2C.Internal_Address_8 := 16#FE#;
+   MODE1_Address         : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#00#;
+   LED0_ON_L_Address     : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#06#;
+   ALL_LED_ON_H_Address  : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FA#;
+   ALL_LED_OFF_H_Address : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FD#;
+   PRE_SCALE_Address     : constant A0B.I2C.Device_Drivers_8.Register_Address := 16#FE#;
 
    type MODE1_Register is record
       ALLCALL : Boolean := True;
@@ -72,7 +77,26 @@ package body BBF.Drivers.PCA9685 is
       MODE2 : MODE2_Register;
    end record;
 
-   procedure On_Transmit_Done (Closure : System.Address);
+   procedure On_Completed (Self : in out PCA9685_Controller_Driver'Class);
+
+   package On_Completed_Callbacks is
+     new A0B.Callbacks.Generic_Non_Dispatching
+           (PCA9685_Controller_Driver, On_Completed);
+
+   function Probe_Synchronous
+     (Self : in out PCA9685_Controller_Driver'Class) return Boolean;
+
+   procedure Write_Synchronous
+     (Self     : in out PCA9685_Controller_Driver'Class;
+      Register : A0B.I2C.Device_Drivers_8.Register_Address;
+      Buffer   : A0B.I2C.Unsigned_8_Array;
+      Success  : in out Boolean);
+
+   procedure Write_Synchronous
+     (Self     : in out PCA9685_Controller_Driver'Class;
+      Register : A0B.I2C.Device_Drivers_8.Register_Address;
+      Buffer   : A0B.Types.Unsigned_8;
+      Success  : in out Boolean);
 
    ---------------
    -- Configure --
@@ -86,8 +110,8 @@ package body BBF.Drivers.PCA9685 is
       use type Interfaces.Unsigned_16;
 
       MODE        : MODE_Register;
-      MODE_Buffer : BBF.Unsigned_8_Array_16 (1 .. 2)
-        with Address => MODE'Address;
+      MODE_Buffer : A0B.I2C.Unsigned_8_Array (0 .. 1)
+        with Import, Address => MODE'Address;
 
    begin
       if not Success or not Self.Initialized then
@@ -124,8 +148,7 @@ package body BBF.Drivers.PCA9685 is
          Reserved_6 => False,   --  Default: FALSE
          Reserved_7 => False);  --  Default: FALSE
 
-      Self.Bus.Write_Synchronous
-        (Self.Device, MODE1_Address, MODE_Buffer, Success);
+      Self.Write_Synchronous (MODE1_Address, MODE_Buffer, Success);
 
       if not Success then
          return;
@@ -134,13 +157,12 @@ package body BBF.Drivers.PCA9685 is
       --  Configure PRE_SCALE register.
 
       Self.Scale :=
-        BBF.Unsigned_8
+        A0B.Types.Unsigned_8
          ((Interfaces.Unsigned_16 (2 * OSC_CLOCK / 4_096) / Frequency - 1) / 2);
       --  Equation (1) in 7.3.5 assume use of real numbers. Modified version is
       --  used to produce same result with integer operations only.
 
-      Self.Bus.Write_Synchronous
-       (Self.Device, PRE_SCALE_Address, Self.Scale, Success);
+      Self.Write_Synchronous (PRE_SCALE_Address, Self.Scale, Success);
 
       if not Success then
          return;
@@ -149,8 +171,7 @@ package body BBF.Drivers.PCA9685 is
       --  Wakeup controller.
 
       MODE.MODE1.SLEEP := False;
-      Self.Bus.Write_Synchronous
-        (Self.Device, MODE1_Address, MODE_Buffer (1 .. 1), Success);
+      Self.Write_Synchronous (MODE1_Address, MODE_Buffer (0 .. 0), Success);
 
       if not Success then
          return;
@@ -169,7 +190,7 @@ package body BBF.Drivers.PCA9685 is
 
       --  Do controller's probe.
 
-      Success := Self.Bus.Probe (Self.Device);
+      Success := Self.Probe_Synchronous;
 
       if not Success then
          return;
@@ -182,11 +203,10 @@ package body BBF.Drivers.PCA9685 is
       declare
          R : constant Registers.LED_OFF_H_Register :=
            (Count => 0, Off => True, others => False);
-         B : BBF.Unsigned_8_Array_16 (1 .. 1) with Address => R'Address;
+         B : A0B.I2C.Unsigned_8_Array (0 .. 0) with Address => R'Address;
 
       begin
-         Self.Bus.Write_Synchronous
-           (Self.Device, ALL_LED_OFF_H_Address, B, Success);
+         Self.Write_Synchronous (ALL_LED_OFF_H_Address, B, Success);
 
          if not Success then
             return;
@@ -205,7 +225,7 @@ package body BBF.Drivers.PCA9685 is
 
       declare
          MODE        : MODE_Register;
-         MODE_Buffer : BBF.Unsigned_8_Array_16 (1 .. 2)
+         MODE_Buffer : A0B.I2C.Unsigned_8_Array (0 .. 1)
            with Address => MODE'Address;
 
       begin
@@ -232,8 +252,7 @@ package body BBF.Drivers.PCA9685 is
             Reserved_6 => False,   --  Default: FALSE
             Reserved_7 => False);  --  Default: FALSE
 
-         Self.Bus.Write_Synchronous
-           (Self.Device, MODE1_Address, MODE_Buffer, Success);
+         Self.Write_Synchronous (MODE1_Address, MODE_Buffer, Success);
 
          if not Success then
             return;
@@ -249,12 +268,15 @@ package body BBF.Drivers.PCA9685 is
    ---------
 
    overriding procedure Off (Self : in out PCA9685_Channel_Driver) is
-      use type Interfaces.Unsigned_8;
+
+      use type A0B.Types.Unsigned_8;
       use type BBF.PCA9685.Value_Type;
 
-      Base    : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Base    : constant A0B.Types.Unsigned_8 :=
+        A0B.Types.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
       Success : Boolean := True;
+      Buffer  : A0B.I2C.Unsigned_8_Array (0 .. 3)
+        with Import, Address => Self.Controller.Buffer (Self.Channel)'Address;
 
    begin
       Self.Controller.Buffer (Self.Channel) :=
@@ -262,15 +284,14 @@ package body BBF.Drivers.PCA9685 is
          LED_ON_H  => (Count => 0, On => False, others => <>),
          LED_OFF_L => (Count => 0),
          LED_OFF_H => (Count => 0, Off => True, others => <>));
-      Self.Controller.Bus.Write_Asynchronous
-        (Device     => Self.Controller.Device,
-         Register   => Base,
-         Data       => Self.Controller.Buffer (Self.Channel)'Address,
-         Length     => 4,
-         On_Success => On_Transmit_Done'Access,
-         On_Error   => On_Transmit_Done'Access,
-         Closure    => Self'Address,
-         Success    => Success);
+
+      Self.Controller.Write
+        (Register     => Base,
+         Buffer       => Buffer,
+         Status       => Self.Controller.Status,
+         On_Completed =>
+           On_Completed_Callbacks.Create_Callback (Self.Controller.all),
+         Success      => Success);
 
       if not Success then
          raise Program_Error;
@@ -287,24 +308,26 @@ package body BBF.Drivers.PCA9685 is
          LED_ON_H  => (Count => 0, On => False, others => <>),
          LED_OFF_L => (Count => 0),
          LED_OFF_H => (Count => 0, Off => True, others => <>));
+      Buffer  : A0B.I2C.Unsigned_8_Array (0 .. 3)
+        with Import, Address => Self.Buffer (Self.Buffer'First)'Address;
       Success : Boolean := True;
 
    begin
+      --  All register values are set, but only 4 bytes are written to the
+      --  ALL_LED register.
+
       for J in Self.Buffer'Range loop
          Self.Buffer (J) := Value;
       end loop;
 
-      Self.Bus.Write_Asynchronous
-        (Device     => Self.Device,
-         Register   => ALL_LED_ON_H_Address,
-         Data       => Self.Buffer (Self.Buffer'First)'Address,
+      Self.Write
+        (Register     => ALL_LED_ON_H_Address,
+         Buffer       => Buffer,
          --  Operation is asynchronous, and Value is local variable and can't
          --  be used.
-         Length     => 4,
-         On_Success => null,
-         On_Error   => null,
-         Closure    => System.Null_Address,
-         Success    => Success);
+         Status       => Self.Status,
+         On_Completed => On_Completed_Callbacks.Create_Callback (Self),
+         Success      => Success);
 
       if not Success then
          raise Program_Error;
@@ -316,11 +339,14 @@ package body BBF.Drivers.PCA9685 is
    --------
 
    overriding procedure On (Self : in out PCA9685_Channel_Driver) is
-      use type Interfaces.Unsigned_8;
+
+      use type A0B.Types.Unsigned_8;
       use type BBF.PCA9685.Value_Type;
 
-      Base    : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Base    : constant A0B.Types.Unsigned_8 :=
+        A0B.Types.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Buffer  : A0B.I2C.Unsigned_8_Array (0 .. 3)
+        with Import, Address => Self.Controller.Buffer (Self.Channel)'Address;
       Success : Boolean := True;
 
    begin
@@ -329,15 +355,13 @@ package body BBF.Drivers.PCA9685 is
          LED_ON_H  => (Count => 0, On => True, others => <>),
          LED_OFF_L => (Count => 0),
          LED_OFF_H => (Count => 0, Off => False, others => <>));
-      Self.Controller.Bus.Write_Asynchronous
-        (Device     => Self.Controller.Device,
-         Register   => Base,
-         Data       => Self.Controller.Buffer (Self.Channel)'Address,
-         Length     => 4,
-         On_Success => On_Transmit_Done'Access,
-         On_Error   => On_Transmit_Done'Access,
-         Closure    => Self'Address,
-         Success    => Success);
+      Self.Controller.Write
+        (Register     => Base,
+         Buffer       => Buffer,
+         Status       => Self.Controller.Status,
+         On_Completed =>
+           On_Completed_Callbacks.Create_Callback (Self.Controller.all),
+         Success      => Success);
 
       if not Success then
          raise Program_Error;
@@ -354,23 +378,25 @@ package body BBF.Drivers.PCA9685 is
          LED_ON_H  => (Count => 0, On => True, others => <>),
          LED_OFF_L => (Count => 0),
          LED_OFF_H => (Count => 0, Off => False, others => <>));
+      Buffer  : A0B.I2C.Unsigned_8_Array (0 .. 3)
+        with Import, Address => Self.Buffer (Self.Buffer'First)'Address;
       Success : Boolean := True;
 
    begin
+      --  All register values are set, but only 4 bytes are written to the
+      --  ALL_LED register.
+
       for J in Self.Buffer'Range loop
          Self.Buffer (J) := Value;
       end loop;
 
-      Self.Bus.Write_Asynchronous
-        (Device     => Self.Device,
-         Register   => ALL_LED_ON_H_Address,
-         Data       => Self.Buffer (Self.Buffer'First)'Address,
+      Self.Write
+        (Register   => ALL_LED_ON_H_Address,
+         Buffer     => Buffer,
          --  Operation is asynchronous, and Value is local variable and can't
          --  be used.
-         Length     => 4,
-         On_Success => null,
-         On_Error   => null,
-         Closure    => System.Null_Address,
+         Status       => Self.Status,
+         On_Completed => On_Completed_Callbacks.Create_Callback (Self),
          Success    => Success);
 
       if not Success then
@@ -378,14 +404,14 @@ package body BBF.Drivers.PCA9685 is
       end if;
    end On;
 
-   ----------------------
-   -- On_Transmit_Done --
-   ----------------------
+   ------------------
+   -- On_Completed --
+   ------------------
 
-   procedure On_Transmit_Done (Closure : System.Address) is
+   procedure On_Completed (Self : in out PCA9685_Controller_Driver'Class) is
    begin
       null;
-   end On_Transmit_Done;
+   end On_Completed;
 
    ---------
    -- Set --
@@ -396,11 +422,13 @@ package body BBF.Drivers.PCA9685 is
       On    : BBF.PCA9685.Value_Type;
       Off   : BBF.PCA9685.Value_Type)
    is
-      use type Interfaces.Unsigned_8;
+      use type A0B.Types.Unsigned_8;
       use type BBF.PCA9685.Value_Type;
 
-      Base    : constant Interfaces.Unsigned_8 :=
-        Interfaces.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Base    : constant A0B.Types.Unsigned_8 :=
+        A0B.Types.Unsigned_8 (Self.Channel) * 4 + LED0_ON_L_Address;
+      Buffer  : A0B.I2C.Unsigned_8_Array (0 .. 3)
+        with Import, Address => Self.Controller.Buffer (Self.Channel)'Address;
       Success : Boolean := True;
 
    begin
@@ -411,15 +439,13 @@ package body BBF.Drivers.PCA9685 is
          LED_OFF_L => (Count => Registers.LSB_Count (Off mod 256)),
          LED_OFF_H =>
            (Count => Registers.MSB_Count (Off / 256), Off => False, others => <>));
-      Self.Controller.Bus.Write_Asynchronous
-        (Device     => Self.Controller.Device,
-         Register   => Base,
-         Data       => Self.Controller.Buffer (Self.Channel)'Address,
-         Length     => 4,
-         On_Success => On_Transmit_Done'Access,
-         On_Error   => On_Transmit_Done'Access,
-         Closure    => Self'Address,
-         Success    => Success);
+      Self.Controller.Write
+        (Register     => Base,
+         Buffer       => Buffer,
+         Status       => Self.Controller.Status,
+         On_Completed =>
+           On_Completed_Callbacks.Create_Callback (Self.Controller.all),
+         Success      => Success);
 
       if not Success then
          raise Program_Error;
@@ -448,5 +474,94 @@ package body BBF.Drivers.PCA9685 is
    begin
       return 1.0 / OSC_CLOCK * (Integer (Self.Scale) + 1);
    end Tick_Duration;
+
+   -----------------------
+   -- Probe_Synchronous --
+   -----------------------
+
+   function Probe_Synchronous
+     (Self : in out PCA9685_Controller_Driver'Class) return Boolean
+   is
+      --  Buffer  : A0B.I2C.Unsigned_8_Array (1 .. 0);
+      --  Status  : aliased A0B.I2C.Device_Drivers_8.Transaction_Status;
+      --  Await   : aliased BBF.Awaits.Await;
+      Success : Boolean := True;
+
+   begin
+      --  Self.Write
+      --    (Buffer       => Buffer,
+      --     Status       => Status,
+      --     On_Completed => BBF.Awaits.Create_Callback (Await),
+      --     Success      => Success);
+      --
+      --  if not Success then
+      --     return;
+      --  end if;
+      --
+      --  BBF.Awaits.Suspend_Till_Callback (Await);
+
+      return Success;
+   end Probe_Synchronous;
+
+   -----------------------
+   -- Write_Synchronous --
+   -----------------------
+
+   procedure Write_Synchronous
+     (Self     : in out PCA9685_Controller_Driver'Class;
+      Register : A0B.I2C.Device_Drivers_8.Register_Address;
+      Buffer   : A0B.Types.Unsigned_8;
+      Success  : in out Boolean)
+   is
+      Write_Buffer : A0B.I2C.Unsigned_8_Array (0 .. 0);
+      Status       : aliased A0B.I2C.Device_Drivers_8.Transaction_Status;
+      Await        : aliased BBF.Awaits.Await;
+
+   begin
+      Write_Buffer (0) := Buffer;
+
+      Self.Write
+        (Register     => Register,
+         Buffer       => Write_Buffer,
+         Status       => Status,
+         On_Completed => BBF.Awaits.Create_Callback (Await),
+         Success      => Success);
+
+      if not Success then
+         return;
+      end if;
+
+      BBF.Awaits.Suspend_Till_Callback (Await);
+   end Write_Synchronous;
+
+   -----------------------
+   -- Write_Synchronous --
+   -----------------------
+
+   procedure Write_Synchronous
+     (Self     : in out PCA9685_Controller_Driver'Class;
+      Register : A0B.I2C.Device_Drivers_8.Register_Address;
+      Buffer   : A0B.I2C.Unsigned_8_Array;
+      Success  : in out Boolean)
+   is
+      use type A0B.Types.Unsigned_32;
+
+      Status : aliased A0B.I2C.Device_Drivers_8.Transaction_Status;
+      Await  : aliased BBF.Awaits.Await;
+
+   begin
+      Self.Write
+        (Register     => Register,
+         Buffer       => Buffer,
+         Status       => Status,
+         On_Completed => BBF.Awaits.Create_Callback (Await),
+         Success      => Success);
+
+      if not Success then
+         return;
+      end if;
+
+      BBF.Awaits.Suspend_Till_Callback (Await);
+   end Write_Synchronous;
 
 end BBF.Drivers.PCA9685;
