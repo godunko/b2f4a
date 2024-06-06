@@ -104,6 +104,9 @@ package BBF.Drivers.PCA9685 is
       Initialized : Boolean := False;
       --  Controller has been initialized.
 
+      Transaction : Boolean := False;
+      --  Transactional mode control.
+
       Scale       : A0B.Types.Unsigned_8 := 3;
       --  Internal frequency scale factor
 
@@ -165,6 +168,14 @@ package BBF.Drivers.PCA9685 is
    overriding procedure On (Self : in out PCA9685_Controller_Driver);
 
    overriding procedure Off (Self : in out PCA9685_Controller_Driver);
+
+   overriding procedure Start_Transaction
+     (Self : in out PCA9685_Controller_Driver);
+   --  Start transactional change of the group of the channels.
+
+   overriding procedure Commit_Transaction
+     (Self : in out PCA9685_Controller_Driver);
+   --  Commit transactional change of the group of the channels.
 
    overriding function Tick_Duration
      (Self : PCA9685_Controller_Driver) return BBF.PCA9685.Tick_Duration_Type;

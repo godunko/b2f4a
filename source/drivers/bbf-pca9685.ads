@@ -4,7 +4,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 --
---  Copyright (C) 2023, Vadim Godunko <vgodunko@gmail.com>
+--  Copyright (C) 2023-2024, Vadim Godunko <vgodunko@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
@@ -47,6 +47,14 @@ package BBF.PCA9685 is
 
    not overriding procedure Off (Self : in out PCA9685_Controller) is abstract;
    --  Turn signals of all channels to OFF state. No PWM generation.
+
+   not overriding procedure Start_Transaction
+     (Self : in out PCA9685_Controller) is abstract;
+   --  Start transactional change of the group of the channels.
+
+   not overriding procedure Commit_Transaction
+     (Self : in out PCA9685_Controller) is abstract;
+   --  Commit transactional change of the group of the channels.
 
    not overriding function Tick_Duration
      (Self : PCA9685_Controller) return Tick_Duration_Type is abstract;

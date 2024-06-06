@@ -103,6 +103,36 @@ package body BBF.Drivers.PCA9685 is
       Buffer   : A0B.Types.Unsigned_8;
       Success  : in out Boolean);
 
+   ------------------------
+   -- Commit_Transaction --
+   ------------------------
+
+   overriding procedure Commit_Transaction
+     (Self : in out PCA9685_Controller_Driver) is
+   begin
+      if Self.Transaction then
+         Self.Transaction := False;
+
+         declare
+            Buffer  : A0B.I2C.Unsigned_8_Array (0 .. 63)
+              with Import, Address => Self.Buffer (Self.Buffer'First)'Address;
+            Success : Boolean := True;
+
+         begin
+            Self.Write
+              (Address      => LED0_ON_L_Address,
+               Buffer       => Buffer,
+               Status       => Self.Status,
+               On_Completed => On_Completed_Callbacks.Create_Callback (Self),
+               Success      => Success);
+
+            if not Success then
+               raise Program_Error;
+            end if;
+         end;
+      end if;
+   end Commit_Transaction;
+
    ---------------
    -- Configure --
    ---------------
@@ -291,7 +321,7 @@ package body BBF.Drivers.PCA9685 is
          LED_OFF_H => (Count => 0, Off => True, others => <>));
 
       Self.Controller.Write
-        (Register     => Base,
+        (Address      => Base,
          Buffer       => Buffer,
          Status       => Self.Controller.Status,
          On_Completed =>
@@ -326,7 +356,7 @@ package body BBF.Drivers.PCA9685 is
       end loop;
 
       Self.Write
-        (Register     => ALL_LED_ON_H_Address,
+        (Address      => ALL_LED_ON_H_Address,
          Buffer       => Buffer,
          --  Operation is asynchronous, and Value is local variable and can't
          --  be used.
@@ -361,7 +391,7 @@ package body BBF.Drivers.PCA9685 is
          LED_OFF_L => (Count => 0),
          LED_OFF_H => (Count => 0, Off => False, others => <>));
       Self.Controller.Write
-        (Register     => Base,
+        (Address      => Base,
          Buffer       => Buffer,
          Status       => Self.Controller.Status,
          On_Completed =>
@@ -396,7 +426,7 @@ package body BBF.Drivers.PCA9685 is
       end loop;
 
       Self.Write
-        (Register   => ALL_LED_ON_H_Address,
+        (Address    => ALL_LED_ON_H_Address,
          Buffer     => Buffer,
          --  Operation is asynchronous, and Value is local variable and can't
          --  be used.
@@ -444,18 +474,31 @@ package body BBF.Drivers.PCA9685 is
          LED_OFF_L => (Count => Registers.LSB_Count (Off mod 256)),
          LED_OFF_H =>
            (Count => Registers.MSB_Count (Off / 256), Off => False, others => <>));
-      Self.Controller.Write
-        (Register     => Base,
-         Buffer       => Buffer,
-         Status       => Self.Controller.Status,
-         On_Completed =>
-           On_Completed_Callbacks.Create_Callback (Self.Controller.all),
-         Success      => Success);
 
-      if not Success then
-         raise Program_Error;
+      if not Self.Controller.Transaction then
+         Self.Controller.Write
+           (Address      => Base,
+            Buffer       => Buffer,
+            Status       => Self.Controller.Status,
+            On_Completed =>
+              On_Completed_Callbacks.Create_Callback (Self.Controller.all),
+            Success      => Success);
+
+         if not Success then
+            raise Program_Error;
+         end if;
       end if;
    end Set;
+
+   -----------------------
+   -- Start_Transaction --
+   -----------------------
+
+   overriding procedure Start_Transaction
+     (Self : in out PCA9685_Controller_Driver) is
+   begin
+      Self.Transaction := True;
+   end Start_Transaction;
 
    -------------------
    -- Tick_Duration --
@@ -526,7 +569,7 @@ package body BBF.Drivers.PCA9685 is
       Write_Buffer (0) := Buffer;
 
       Self.Write
-        (Register     => Register,
+        (Address      => Register,
          Buffer       => Write_Buffer,
          Status       => Status,
          On_Completed => BBF.Awaits.Create_Callback (Await),
@@ -556,7 +599,7 @@ package body BBF.Drivers.PCA9685 is
 
    begin
       Self.Write
-        (Register     => Register,
+        (Address      => Register,
          Buffer       => Buffer,
          Status       => Status,
          On_Completed => BBF.Awaits.Create_Callback (Await),
