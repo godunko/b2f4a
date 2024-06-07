@@ -12,6 +12,7 @@
 with "a0b_i2c";
 with "a0b_atsam3x8e";
 with "a0b_atsam3x8e_gpio";
+with "a0b_atsam3x8e_twi_i2c";
 
 project BBF is
 
