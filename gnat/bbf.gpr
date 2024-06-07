@@ -9,10 +9,7 @@
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 --
 
-with "a0b_i2c";
-with "a0b_atsam3x8e";
-with "a0b_atsam3x8e_gpio";
-with "a0b_atsam3x8e_twi_i2c";
+with "../config/b2f4a_config.gpr";
 
 project BBF is
 

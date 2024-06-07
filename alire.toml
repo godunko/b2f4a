@@ -1,0 +1,18 @@
+name = "b2f4a"
+description = "Bare board support for Phoenyx Hexapod project"
+version = "0.1.0-dev"
+
+authors = ["Vadim Godunko"]
+maintainers = ["Vadim Godunko <vgodunko@gmail.com>"]
+maintainers-logins = ["godunko"]
+
+project-files = ["gnat/bbf.gpr"]
+
+[[configuration]]
+generate_ada = false
+generate_c = false
+
+[[depends-on]]
+a0b_i2c = "*"
+a0b_atsam3x8e_gpio = "*"
+a0b_atsam3x8e_tc5_timer = "*"
