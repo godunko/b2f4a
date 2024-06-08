@@ -21,9 +21,8 @@ package body BBF.Awaits is
    function Create_Callback
      (Self : aliased in out Await) return A0B.Callbacks.Callback is
    begin
-      pragma Assert (not Self.Busy);
-
-      Self.Busy := True;
+      pragma Assert
+        (not Ada.Synchronous_Task_Control.Current_State (Self.Barrier));
 
       return Callbacks.Create_Callback (Self);
    end Create_Callback;
@@ -34,18 +33,17 @@ package body BBF.Awaits is
 
    procedure On_Callback (Self : in out Await) is
    begin
-      Self.Busy := False;
+      Ada.Synchronous_Task_Control.Set_True (Self.Barrier);
    end On_Callback;
 
    ---------------------------
    -- Suspend_Till_Callback --
    ---------------------------
 
-   procedure Suspend_Till_Callback (Self : Await) is
+   procedure Suspend_Till_Callback (Self : in out Await) is
    begin
-      while Self.Busy loop
-         A0B.ARMv7M.CMSIS.Wait_For_Interrupt;
-      end loop;
+      Ada.Synchronous_Task_Control.Suspend_Until_True (Self.Barrier);
+      Ada.Synchronous_Task_Control.Set_False (Self.Barrier);
    end Suspend_Till_Callback;
 
 end BBF.Awaits;
