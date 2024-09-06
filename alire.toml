@@ -11,8 +11,10 @@ project-files = ["gnat/bbf.gpr"]
 [[configuration]]
 generate_ada = false
 generate_c = false
+generate_gpr = true
 
 [[depends-on]]
 a0b_i2c = "*"
 a0b_atsam3x8e_gpio = "*"
 a0b_atsam3x8e_tc5_timer = "*"
+a0b_tasking = "*"
