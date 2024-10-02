@@ -593,6 +593,7 @@ package body BBF.Drivers.PCA9685 is
       Success  : in out Boolean)
    is
       use type A0B.Types.Unsigned_32;
+      use type A0B.I2C.Transfer_State;
 
       Status : aliased A0B.I2C.Device_Drivers_8.Transaction_Status;
       Await  : aliased BBF.Awaits.Await;
@@ -610,6 +611,10 @@ package body BBF.Drivers.PCA9685 is
       end if;
 
       BBF.Awaits.Suspend_Till_Callback (Await);
+
+      if Status.State /= A0B.I2C.Success then
+         Success := False;
+      end if;
    end Write_Synchronous;
 
 end BBF.Drivers.PCA9685;
